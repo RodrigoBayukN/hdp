@@ -98,6 +98,7 @@ export namespace Project {
     readonly sandboxes: (id: ProjectID) => Effect.Effect<string[]>
     readonly addSandbox: (id: ProjectID, directory: string) => Effect.Effect<void>
     readonly removeSandbox: (id: ProjectID, directory: string) => Effect.Effect<void>
+    readonly remove: (id: ProjectID) => Effect.Effect<void>
   }
 
   export class Service extends Context.Service<Service, Interface>()("@opencode/Project") {}
@@ -175,10 +176,16 @@ export namespace Project {
           const dotgit = dotgitMatches[0]
 
           if (!dotgit) {
+            const resolvedPath = pathSvc.resolve(directory)
+            const id = yield* Effect.sync(() => {
+              const { createHash } = require("crypto")
+              const hash = createHash("sha256").update(resolvedPath).digest("hex").slice(0, 40)
+              return ProjectID.make(hash)
+            })
             return {
-              id: ProjectID.global,
-              worktree: "/",
-              sandbox: "/",
+              id,
+              worktree: resolvedPath,
+              sandbox: resolvedPath,
               vcs: fakeVcs,
             }
           }
@@ -252,6 +259,7 @@ export namespace Project {
           ? fromRow(row)
           : {
               id: data.id,
+              name: pathSvc.basename(data.worktree) || "unnamed",
               worktree: data.worktree,
               vcs: data.vcs,
               sandboxes: [] as string[],
@@ -443,6 +451,10 @@ export namespace Project {
         yield* emitUpdated(fromRow(result))
       })
 
+      const remove = Effect.fn("Project.remove")(function* (id: ProjectID) {
+        yield* db((d) => d.delete(ProjectTable).where(eq(ProjectTable.id, id)).run())
+      })
+
       return Service.of({
         fromDirectory,
         discover,
@@ -454,6 +466,7 @@ export namespace Project {
         sandboxes,
         addSandbox,
         removeSandbox,
+        remove,
       })
     }),
   )
@@ -517,5 +530,9 @@ export namespace Project {
 
   export function removeSandbox(id: ProjectID, directory: string) {
     return runPromise((svc) => svc.removeSandbox(id, directory))
+  }
+
+  export function remove(id: ProjectID) {
+    return runPromise((svc) => svc.remove(id))
   }
 }

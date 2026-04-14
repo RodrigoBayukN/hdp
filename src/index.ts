@@ -28,6 +28,7 @@ import { EOL } from "os"
 import { WebCommand } from "./cli/cmd/web"
 import { PrCommand } from "./cli/cmd/pr"
 import { SessionCommand } from "./cli/cmd/session"
+import { ProjectCommand } from "./cli/cmd/project"
 import { DbCommand } from "./cli/cmd/db"
 import path from "path"
 import { Global } from "./global"
@@ -138,6 +139,7 @@ const cli = yargs(args)
   .command(ImportCommand)
   .command(GithubCommand)
   .command(PrCommand)
+  .command(ProjectCommand)
   .command(SessionCommand)
   .command(PluginCommand)
   .command(DbCommand)

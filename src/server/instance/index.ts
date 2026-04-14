@@ -28,7 +28,6 @@ import { AppRuntime } from "@/effect/app-runtime"
 export const InstanceRoutes = (upgrade: UpgradeWebSocket): Hono =>
   new Hono()
     .use(WorkspaceRouterMiddleware(upgrade))
-    .route("/project", ProjectRoutes())
     .route("/pty", PtyRoutes(upgrade))
     .route("/config", ConfigRoutes())
     .route("/experimental", ExperimentalRoutes())

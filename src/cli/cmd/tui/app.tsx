@@ -36,6 +36,8 @@ import { DialogHelp } from "./ui/dialog-help"
 import { CommandProvider, useCommandDialog } from "@tui/component/dialog-command"
 import { DialogAgent } from "@tui/component/dialog-agent"
 import { DialogSessionList } from "@tui/component/dialog-session-list"
+import { DialogProjectList } from "./component/dialog-project-list"
+import { DialogProjectCreate } from "./component/dialog-project-create"
 import { DialogConsoleOrg } from "@tui/component/dialog-console-org"
 import { KeybindProvider, useKeybind } from "@tui/context/keybind"
 import { ThemeProvider, useTheme } from "@tui/context/theme"
@@ -483,6 +485,30 @@ function App(props: { onSnapshot?: () => Promise<string[]> }) {
           initialPrompt: currentPrompt,
         })
         dialog.clear()
+      },
+    },
+    {
+      title: "View projects",
+      value: "project.list",
+      category: "Project",
+      slash: {
+        name: "projects",
+        aliases: ["switch-project", "p"],
+      },
+      onSelect: () => {
+        dialog.replace(() => <DialogProjectList />)
+      },
+    },
+    {
+      title: "Add project",
+      value: "project.create",
+      category: "Project",
+      slash: {
+        name: "new-project",
+        aliases: ["pn", "add-project"],
+      },
+      onSelect: () => {
+        dialog.replace(() => <DialogProjectCreate />)
       },
     },
     {

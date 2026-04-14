@@ -6,11 +6,13 @@ import { describeRoute, resolver, validator, openAPIRouteHandler } from "hono-op
 import z from "zod"
 import { errors } from "../error"
 import { GlobalRoutes } from "../instance/global"
+import { ProjectRoutes } from "../instance/project"
 
 export function ControlPlaneRoutes(): Hono {
   const app = new Hono()
   return app
     .route("/global", GlobalRoutes())
+    .route("/project", ProjectRoutes())
     .put(
       "/auth/:providerID",
       describeRoute({

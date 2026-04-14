@@ -11,6 +11,33 @@ import { InstanceBootstrap } from "../../project/bootstrap"
 
 export const ProjectRoutes = lazy(() =>
   new Hono()
+    .post(
+      "/",
+      describeRoute({
+        summary: "Register a project",
+        description: "Register a project from a directory path.",
+        operationId: "project.add",
+        responses: {
+          200: {
+            description: "Registered project information",
+            content: {
+              "application/json": {
+                schema: resolver(Project.Info),
+              },
+            },
+          },
+        },
+      }),
+      validator("json", z.object({ path: z.string(), name: z.string().optional() })),
+      async (c) => {
+        const body = c.req.valid("json")
+        const { project } = await Project.fromDirectory(body.path)
+        if (body.name) {
+          return c.json(await Project.update({ projectID: project.id, name: body.name }))
+        }
+        return c.json(project)
+      },
+    )
     .get(
       "/",
       describeRoute({
@@ -29,7 +56,7 @@ export const ProjectRoutes = lazy(() =>
         },
       }),
       async (c) => {
-        const projects = Project.list()
+        const projects = await Project.list()
         return c.json(projects)
       },
     )
@@ -89,7 +116,7 @@ export const ProjectRoutes = lazy(() =>
       },
     )
     .patch(
-      "/:projectID",
+      "/:projectID{.+(?<!/git/init)}",
       describeRoute({
         summary: "Update project",
         description: "Update project properties such as name, icon, and commands.",
@@ -113,6 +140,31 @@ export const ProjectRoutes = lazy(() =>
         const body = c.req.valid("json")
         const project = await Project.update({ ...body, projectID })
         return c.json(project)
+      },
+    )
+    .delete(
+      "/:projectID{.+(?<!/git/init)}",
+      describeRoute({
+        summary: "Remove project",
+        description: "Remove a project from the database.",
+        operationId: "project.remove",
+        responses: {
+          200: {
+            description: "Project removed",
+            content: {
+              "application/json": {
+                schema: resolver(z.object({ status: z.literal("ok") })),
+              },
+            },
+          },
+          ...errors(400, 404),
+        },
+      }),
+      validator("param", z.object({ projectID: ProjectID.zod })),
+      async (c) => {
+        const projectID = c.req.valid("param").projectID
+        await Project.remove(projectID)
+        return c.json({ status: "ok" })
       },
     ),
 )
