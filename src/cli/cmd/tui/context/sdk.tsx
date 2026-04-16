@@ -1,8 +1,8 @@
 import { createOpencodeClient } from "@opencode-ai/sdk/v2"
-import type { GlobalEvent, Event } from "@opencode-ai/sdk/v2"
+import type { GlobalEvent, OpencodeClient } from "@opencode-ai/sdk/v2"
 import { createSimpleContext } from "./helper"
 import { createGlobalEmitter } from "@solid-primitives/event-bus"
-import { batch, onCleanup, onMount } from "solid-js"
+import { batch, onCleanup, onMount, createSignal, createEffect } from "solid-js"
 
 export type EventSource = {
   subscribe: (handler: (event: GlobalEvent) => void) => Promise<() => void>
@@ -19,18 +19,19 @@ export const { use: useSDK, provider: SDKProvider } = createSimpleContext({
   }) => {
     const abort = new AbortController()
     let sse: AbortController | undefined
+    const [directory, setDirectory] = createSignal(props.directory)
 
-    function createSDK() {
+    function createSDK(dir?: string) {
       return createOpencodeClient({
         baseUrl: props.url,
         signal: abort.signal,
-        directory: props.directory,
+        directory: dir,
         fetch: props.fetch,
         headers: props.headers,
       })
     }
 
-    let sdk = createSDK()
+    const [sdk, setSDK] = createSignal<OpencodeClient>(createSDK(directory()))
 
     const emitter = createGlobalEmitter<{
       event: GlobalEvent
@@ -46,7 +47,6 @@ export const { use: useSDK, provider: SDKProvider } = createSimpleContext({
       queue = []
       timer = undefined
       last = Date.now()
-      // Batch all event emissions so all store updates result in a single render
       batch(() => {
         for (const event of events) {
           emitter.emit("event", event)
@@ -57,10 +57,7 @@ export const { use: useSDK, provider: SDKProvider } = createSimpleContext({
     const handleEvent = (event: GlobalEvent) => {
       queue.push(event)
       const elapsed = Date.now() - last
-
       if (timer) return
-      // If we just flushed recently (within 16ms), batch this with future events
-      // Otherwise, process immediately to avoid latency
       if (elapsed < 16) {
         timer = setTimeout(flush, 16)
         return
@@ -72,10 +69,11 @@ export const { use: useSDK, provider: SDKProvider } = createSimpleContext({
       sse?.abort()
       const ctrl = new AbortController()
       sse = ctrl
+      const currentSDK = sdk()
       ;(async () => {
         while (true) {
           if (abort.signal.aborted || ctrl.signal.aborted) break
-          const events = await sdk.global.event({ signal: ctrl.signal })
+          const events = await currentSDK.global.event({ signal: ctrl.signal })
 
           for await (const event of events.stream) {
             if (ctrl.signal.aborted) break
@@ -87,6 +85,14 @@ export const { use: useSDK, provider: SDKProvider } = createSimpleContext({
         }
       })().catch(() => {})
     }
+
+    createEffect(() => {
+      const dir = directory()
+      setSDK(createSDK(dir))
+      if (!props.events) {
+        startSSE()
+      }
+    })
 
     onMount(async () => {
       if (props.events) {
@@ -105,9 +111,14 @@ export const { use: useSDK, provider: SDKProvider } = createSimpleContext({
 
     return {
       get client() {
-        return sdk
+        return sdk()
       },
-      directory: props.directory,
+      get directory() {
+        return directory()
+      },
+      setDirectory(dir?: string) {
+        setDirectory(dir)
+      },
       event: emitter,
       fetch: props.fetch ?? fetch,
       url: props.url,

@@ -30,7 +30,6 @@ import { SyncProvider, useSync } from "@tui/context/sync"
 import { LocalProvider, useLocal } from "@tui/context/local"
 import { DialogModel, useConnected } from "@tui/component/dialog-model"
 import { DialogMcp } from "@tui/component/dialog-mcp"
-import { DialogStatus } from "@tui/component/dialog-status"
 import { DialogThemeList } from "@tui/component/dialog-theme-list"
 import { DialogHelp } from "./ui/dialog-help"
 import { CommandProvider, useCommandDialog } from "@tui/component/dialog-command"
@@ -348,32 +347,10 @@ function App(props: { onSnapshot?: () => Promise<string[]> }) {
 
     renderer.clearSelection()
   }
-  const [terminalTitleEnabled, setTerminalTitleEnabled] = createSignal(kv.get("terminal_title_enabled", true))
-
-  // Update terminal window title based on current route and session
+  const [terminalTitleEnabled, setTerminalTitleEnabled] = createSignal(kv.get("terminal_title_enabled", true))  // Update terminal window title
   createEffect(() => {
     if (!terminalTitleEnabled() || Flag.OPENCODE_DISABLE_TERMINAL_TITLE) return
-
-    if (route.data.type === "home") {
-      renderer.setTerminalTitle("HDP")
-      return
-    }
-
-    if (route.data.type === "session") {
-      const session = sync.session.get(route.data.sessionID)
-      if (!session || SessionApi.isDefaultTitle(session.title)) {
-        renderer.setTerminalTitle("HDP")
-        return
-      }
-
-      const title = session.title.length > 40 ? session.title.slice(0, 37) + "..." : session.title
-      renderer.setTerminalTitle(`HDP | ${title}`)
-      return
-    }
-
-    if (route.data.type === "plugin") {
-      renderer.setTerminalTitle(`HDP | ${route.data.id}`)
-    }
+    renderer.setTerminalTitle("HDP | Helper for Developer of Projects")
   })
 
   const args = useArgs()
@@ -438,6 +415,17 @@ function App(props: { onSnapshot?: () => Promise<string[]> }) {
       }
     })
   })
+
+  // Navigate home when project changes
+  createEffect(
+    on(
+      () => sdk.directory,
+      () => {
+        route.navigate({ type: "home" })
+      },
+      { defer: true },
+    ),
+  )
 
   createEffect(
     on(
@@ -659,18 +647,6 @@ function App(props: { onSnapshot?: () => Promise<string[]> }) {
         ]
       : []),
     {
-      title: "View status",
-      keybind: "status_view",
-      value: "opencode.status",
-      slash: {
-        name: "status",
-      },
-      onSelect: () => {
-        dialog.replace(() => <DialogStatus />)
-      },
-      category: "System",
-    },
-    {
       title: "Switch theme",
       value: "theme.switch",
       keybind: "theme_list",
@@ -709,15 +685,6 @@ function App(props: { onSnapshot?: () => Promise<string[]> }) {
       },
       onSelect: () => {
         dialog.replace(() => <DialogHelp />)
-      },
-      category: "System",
-    },
-    {
-      title: "Open docs",
-      value: "docs.open",
-      onSelect: () => {
-        open("https://opencode.ai/docs").catch(() => {})
-        dialog.clear()
       },
       category: "System",
     },

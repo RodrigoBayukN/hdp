@@ -21,7 +21,7 @@ import { cmd } from "./cmd"
 import { ModelsDev } from "../../provider/models"
 import { Instance } from "@/project/instance"
 import { bootstrap } from "../bootstrap"
-import { SessionShare } from "@/share/session"
+// import { SessionShare } from "@/share/session"
 import { Session } from "../../session"
 import type { SessionID } from "../../session/schema"
 import { MessageID, PartID } from "../../session/schema"
@@ -561,12 +561,15 @@ export const GithubRunCommand = cmd({
           ],
         })
         subscribeSessionEvents()
+        shareId = undefined
+        /*
         shareId = await (async () => {
           if (share === false) return
           if (!share && repoData.data.private) return
           await SessionShare.share(session.id)
           return session.id.slice(-8)
         })()
+        */
         console.log("opencode session", session.id)
 
         // Handle event types:

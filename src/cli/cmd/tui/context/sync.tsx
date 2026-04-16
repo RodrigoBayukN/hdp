@@ -27,7 +27,7 @@ import { createSimpleContext } from "./helper"
 import type { Snapshot } from "@/snapshot"
 import { useExit } from "./exit"
 import { useArgs } from "./args"
-import { batch, createEffect, on } from "solid-js"
+import { batch, createEffect, on, createSignal } from "solid-js"
 import { Log } from "@/util/log"
 import { ConsoleState, emptyConsoleState, type ConsoleState as ConsoleStateType } from "@/config/console-state"
 
@@ -103,6 +103,8 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
       formatter: [],
       vcs: undefined,
     })
+
+    const [initialized, setInitialized] = createSignal(false)
 
     const event = useEvent()
     const project = useProject()
@@ -433,6 +435,7 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
             project.workspace.sync(),
           ]).then(() => {
             setStore("status", "complete")
+            setInitialized(true)
           })
         })
         .catch(async (e) => {
@@ -441,11 +444,56 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
             name: e instanceof Error ? e.name : undefined,
             stack: e instanceof Error ? e.stack : undefined,
           })
-          await exit(e)
+          if (!initialized()) {
+            await exit(e)
+          } else {
+            setStore("status", "complete")
+            toast.show({
+              message: `Failed to sync project: ${e instanceof Error ? e.message : String(e)}`,
+              variant: "error",
+            })
+          }
         })
     }
 
     const fullSyncedSessions = new Set<string>()
+    createEffect(
+      on(
+        () => sdk.directory,
+        () => {
+          batch(() => {
+            setStore("status", "loading")
+            setStore("session", [])
+            setStore("message", {})
+            setStore("part", {})
+            setStore("lsp", [])
+            setStore("todo", {})
+            setStore("session_diff", {})
+            setStore("session_status", {})
+            setStore("vcs", undefined)
+            setStore("provider", [])
+            setStore("provider_default", {})
+            setStore("agent", [])
+            setStore("config", {})
+            setStore("permission", {})
+            setStore("question", {})
+            setStore("command", [])
+            setStore("mcp", {})
+            setStore("mcp_resource", {})
+            setStore("formatter", [])
+            setStore("provider_auth", {})
+            setStore("console_state", emptyConsoleState)
+            setStore("provider_next", {
+              all: [],
+              default: {},
+              connected: [],
+            })
+          })
+          void bootstrap()
+        },
+      ),
+    )
+
     createEffect(
       on(
         () => project.workspace.current(),

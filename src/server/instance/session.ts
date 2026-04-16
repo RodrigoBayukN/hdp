@@ -9,7 +9,6 @@ import { SessionPrompt } from "../../session/prompt"
 import { SessionRunState } from "@/session/run-state"
 import { SessionCompaction } from "../../session/compaction"
 import { SessionRevert } from "../../session/revert"
-import { SessionShare } from "@/share/session"
 import { SessionStatus } from "@/session/status"
 import { SessionSummary } from "@/session/summary"
 import { Todo } from "../../session/todo"
@@ -212,7 +211,7 @@ export const SessionRoutes = lazy(() =>
       validator("json", Session.create.schema),
       async (c) => {
         const body = c.req.valid("json") ?? {}
-        const session = await SessionShare.create(body)
+        const session = await Session.create(body)
         return c.json(session)
       },
     )
@@ -411,37 +410,6 @@ export const SessionRoutes = lazy(() =>
         return c.json(true)
       },
     )
-    .post(
-      "/:sessionID/share",
-      describeRoute({
-        summary: "Share session",
-        description: "Create a shareable link for a session, allowing others to view the conversation.",
-        operationId: "session.share",
-        responses: {
-          200: {
-            description: "Successfully shared session",
-            content: {
-              "application/json": {
-                schema: resolver(Session.Info),
-              },
-            },
-          },
-          ...errors(400, 404),
-        },
-      }),
-      validator(
-        "param",
-        z.object({
-          sessionID: SessionID.zod,
-        }),
-      ),
-      async (c) => {
-        const sessionID = c.req.valid("param").sessionID
-        await SessionShare.share(sessionID)
-        const session = await Session.get(sessionID)
-        return c.json(session)
-      },
-    )
     .get(
       "/:sessionID/diff",
       describeRoute({
@@ -479,37 +447,6 @@ export const SessionRoutes = lazy(() =>
           messageID: query.messageID,
         })
         return c.json(result)
-      },
-    )
-    .delete(
-      "/:sessionID/share",
-      describeRoute({
-        summary: "Unshare session",
-        description: "Remove the shareable link for a session, making it private again.",
-        operationId: "session.unshare",
-        responses: {
-          200: {
-            description: "Successfully unshared session",
-            content: {
-              "application/json": {
-                schema: resolver(Session.Info),
-              },
-            },
-          },
-          ...errors(400, 404),
-        },
-      }),
-      validator(
-        "param",
-        z.object({
-          sessionID: SessionID.zod,
-        }),
-      ),
-      async (c) => {
-        const sessionID = c.req.valid("param").sessionID
-        await SessionShare.unshare(sessionID)
-        const session = await Session.get(sessionID)
-        return c.json(session)
       },
     )
     .post(

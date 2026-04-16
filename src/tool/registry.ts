@@ -21,6 +21,8 @@ import { Provider } from "../provider/provider"
 import { ProviderID, type ModelID } from "../provider/schema"
 import { WebSearchTool } from "./websearch"
 import { CodeSearchTool } from "./codesearch"
+import { LocalIndexTool } from "./local_index"
+import { LocalSearchTool } from "./local_search"
 import { Flag } from "@/flag/flag"
 import { Log } from "@/util/log"
 import { LspTool } from "./lsp"
@@ -122,6 +124,8 @@ export namespace ToolRegistry {
       const greptool = yield* GrepTool
       const patchtool = yield* ApplyPatchTool
       const skilltool = yield* SkillTool
+      const localindex = yield* LocalIndexTool
+      const localsearch = yield* LocalSearchTool
 
       const state = yield* InstanceState.make<State>(
         Effect.fn("ToolRegistry.state")(function* (ctx) {
@@ -199,6 +203,8 @@ export namespace ToolRegistry {
             question: Tool.init(question),
             lsp: Tool.init(lsptool),
             plan: Tool.init(plan),
+            local_index: Tool.init(localindex),
+            local_search: Tool.init(localsearch),
           })
 
           return {
@@ -219,6 +225,8 @@ export namespace ToolRegistry {
               tool.code,
               tool.skill,
               tool.patch,
+              tool.local_index,
+              tool.local_search,
               ...(Flag.OPENCODE_EXPERIMENTAL_LSP_TOOL ? [tool.lsp] : []),
               ...(Flag.OPENCODE_EXPERIMENTAL_PLAN_MODE && Flag.OPENCODE_CLIENT === "cli" ? [tool.plan] : []),
             ],

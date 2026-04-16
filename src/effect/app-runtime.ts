@@ -45,8 +45,8 @@ import { Vcs } from "@/project/vcs"
 import { Worktree } from "@/worktree"
 import { Pty } from "@/pty"
 import { Installation } from "@/installation"
-import { ShareNext } from "@/share/share-next"
-import { SessionShare } from "@/share/session"
+// import { ShareNext } from "@/share/share-next"
+// import { SessionShare } from "@/share/session"
 
 export const AppLayer = Layer.mergeAll(
   Observability.layer,
@@ -93,8 +93,8 @@ export const AppLayer = Layer.mergeAll(
   Worktree.defaultLayer,
   Pty.defaultLayer,
   Installation.defaultLayer,
-  ShareNext.defaultLayer,
-  SessionShare.defaultLayer,
+  // ShareNext.defaultLayer,
+  // SessionShare.defaultLayer,
 )
 
 export const AppRuntime = ManagedRuntime.make(AppLayer, { memoMap })

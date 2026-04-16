@@ -140,6 +140,9 @@ function stateApi(sync: ReturnType<typeof useSync>): TuiPluginApi["state"] {
     get path() {
       return sync.path
     },
+    get project() {
+      return sync.path.directory.split("/").pop() || "HDP"
+    },
     get vcs() {
       if (!sync.data.vcs) return
       return {

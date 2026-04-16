@@ -1,4 +1,4 @@
-import { batch } from "solid-js"
+import { batch, createEffect } from "solid-js"
 import type { Path, Workspace } from "@opencode-ai/sdk/v2"
 import { createStore, reconcile } from "solid-js/store"
 import { createSimpleContext } from "./helper"
@@ -28,6 +28,17 @@ export const { use: useProject, provider: ProjectProvider } = createSimpleContex
         list: [] as Workspace[],
         status: {} as Record<string, WorkspaceStatus>,
       },
+    })
+
+    createEffect(() => {
+      const dir = sdk.directory ?? ""
+      batch(() => {
+        setStore("instance", "path", "directory", dir)
+        setStore("instance", "path", "worktree", dir)
+        setStore("instance", "path", "config", "")
+        setStore("instance", "path", "state", "")
+        setStore("instance", "path", "home", "")
+      })
     })
 
     async function sync() {
@@ -75,6 +86,9 @@ export const { use: useProject, provider: ProjectProvider } = createSimpleContex
         },
         directory() {
           return store.instance.path.directory
+        },
+        set(path: string) {
+          sdk.setDirectory(path)
         },
       },
       workspace: {

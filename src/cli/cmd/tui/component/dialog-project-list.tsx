@@ -10,6 +10,7 @@ import { Keybind } from "@/util/keybind"
 import { DialogPrompt } from "@tui/ui/dialog-prompt"
 import { useKeybind } from "../context/keybind"
 import { DialogProjectRename } from "./dialog-project-rename"
+import { useProject } from "../context/project"
 
 // Manually defining more complete type since SDK gen might be outdated
 interface ProjectInfo {
@@ -30,6 +31,7 @@ export function DialogProjectList() {
   const exit = useExit()
   const renderer = useRenderer()
   const keybind = useKeybind()
+  const projectCtx = useProject()
   const [toDelete, setToDelete] = createSignal<string>()
 
   const [projects, { refetch }] = createResource(async () => {
@@ -131,21 +133,9 @@ export function DialogProjectList() {
         const project = pList?.find((p) => p.id === option.value)
         if (!project) return
 
-        toast.show({ message: "Opening project...", variant: "info" })
-
-        setTimeout(() => {
-          renderer.dispose()
-          const { spawn } = require("child_process")
-          const bin = process.argv[0]
-          const args = [process.argv[1], project.worktree]
-          
-          const child = spawn(bin, args, {
-            stdio: "inherit",
-            detached: true
-          })
-          child.unref()
-          process.exit(0)
-        }, 100)
+        toast.show({ message: "Switching project...", variant: "info" })
+        projectCtx.instance.set(project.worktree)
+        dialog.clear()
       }}
       keybind={[
         {

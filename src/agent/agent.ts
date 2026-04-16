@@ -13,6 +13,8 @@ import PROMPT_COMPACTION from "./prompt/compaction.txt"
 import PROMPT_EXPLORE from "./prompt/explore.txt"
 import PROMPT_SUMMARY from "./prompt/summary.txt"
 import PROMPT_TITLE from "./prompt/title.txt"
+import PROMPT_CONSULTANT from "./prompt/consultant.txt"
+import PROMPT_ANALYST from "./prompt/analyst.txt"
 import { Permission } from "@/permission"
 import { mergeDeep, pipe, sortBy, values } from "remeda"
 import { Global } from "@/global"
@@ -141,6 +143,42 @@ export namespace Agent {
                 }),
                 user,
               ),
+              mode: "primary",
+              native: true,
+            },
+            consultant: {
+              name: "consultant",
+              description: "Project consultant for general questions and discussion.",
+              options: {},
+              permission: Permission.merge(
+                defaults,
+                Permission.fromConfig({
+                  question: "allow",
+                  edit: {
+                    "*": "deny",
+                  },
+                }),
+                user,
+              ),
+              prompt: PROMPT_CONSULTANT,
+              mode: "primary",
+              native: true,
+            },
+            analyst: {
+              name: "analyst",
+              description: "Software Architect. Specialized in analysis and design proposals.",
+              options: {},
+              permission: Permission.merge(
+                defaults,
+                Permission.fromConfig({
+                  question: "allow",
+                  edit: {
+                    "*": "deny",
+                  },
+                }),
+                user,
+              ),
+              prompt: PROMPT_ANALYST,
               mode: "primary",
               native: true,
             },
