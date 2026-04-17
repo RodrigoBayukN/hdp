@@ -120,7 +120,10 @@ if (!mainResult.success) {
   process.exit(1);
 }
 
-// Compile standalone binaries for multiple platforms
+// Compile standalone binaries
+const isCI = process.env.GITHUB_ACTIONS === "true";
+const targetArg = process.argv.find((arg) => arg.startsWith("--target="));
+
 const platforms = [
   { target: "bun-linux-x64", name: "hdp-linux-x64" },
   { target: "bun-linux-arm64", name: "hdp-linux-arm64" },
@@ -129,20 +132,26 @@ const platforms = [
   { target: "bun-windows-x64", name: "hdp-windows-x64.exe" },
 ];
 
-console.log("\nCompiling cross-platform binaries...");
+console.log("\nCompiling binaries...");
 const externals = nativeModules.map((m) => `--external ${m}`).join(" ");
 
-for (const { target, name } of platforms) {
-  try {
-    process.stdout.write(`  Building ${name}... `);
-    await $`bun build ${join(dist, "index.js")} --compile --target ${target} --outfile ${join(dist, name)} ${externals}`.quiet();
-    console.log("✅");
-  } catch (e) {
-    console.log("❌ (Check if you have the target installed: bun add -g bun-types)");
+if (targetArg) {
+  const target = targetArg.split("=")[1];
+  const name = target.includes("windows") ? "hdp.exe" : "hdp";
+  process.stdout.write(`  Building ${target} as ${name}... `);
+  await $`bun build ${join(dist, "index.js")} --compile --target ${target} --outfile ${join(dist, name)} ${externals}`.quiet();
+  console.log("✅");
+} else {
+  for (const { target, name } of platforms) {
+    try {
+      process.stdout.write(`  Building ${name}... `);
+      await $`bun build ${join(dist, "index.js")} --compile --target ${target} --outfile ${join(dist, name)} ${externals}`.quiet();
+      console.log("✅");
+    } catch (e) {
+      console.log("❌");
+    }
   }
 }
 
-console.log("\nBuild successful! Binaries created in ./dist/");
-console.log("Note: Native modules (node-pty, tree-sitter) are external.");
-console.log("On Windows/Mac, you'll need the corresponding native modules in node_modules.");
+console.log("\nBuild successful!");
 
