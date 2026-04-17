@@ -9,7 +9,7 @@
     "typecheck": "tsgo --noEmit",
     "test": "bun test --timeout 30000",
     "build": "bun run script/build.ts",
-    "dev": "bun run --conditions=browser ./src/index.ts"
+    "dev": "bun run --config bunfig.dev.toml --conditions=browser ./src/index.ts"
   },
   "bin": {
     "hdp": "./bin/hdp"

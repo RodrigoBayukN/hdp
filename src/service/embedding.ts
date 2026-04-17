@@ -1,4 +1,13 @@
-import { pipeline, type FeatureExtractionPipeline } from "@huggingface/transformers"
+import { pipeline, type FeatureExtractionPipeline, env } from "@huggingface/transformers"
+
+// Configure transformers to use WASM backend to avoid native library issues in the binary
+env.allowLocalModels = false;
+
+// Defensive configuration for backends
+if (env.backends && env.backends.onnx && env.backends.onnx.wasm) {
+  env.backends.onnx.wasm.numThreads = 1;
+}
+
 
 let extractor: FeatureExtractionPipeline | undefined
 

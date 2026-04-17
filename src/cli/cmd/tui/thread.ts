@@ -19,7 +19,7 @@ import { Config } from "@/config/config"
 import { writeHeapSnapshot } from "v8"
 
 declare global {
-  const HDP_WORKER_PATH: string
+  const HDP_WORKER_CODE: string
 }
 
 type RpcClient = ReturnType<typeof Rpc.client<typeof rpc>>
@@ -53,11 +53,16 @@ function createEventSource(client: RpcClient): EventSource {
 }
 
 async function target() {
-  if (typeof HDP_WORKER_PATH !== "undefined") return HDP_WORKER_PATH
+  if (typeof HDP_WORKER_CODE !== "undefined") {
+    const blob = new Blob([HDP_WORKER_CODE], { type: "text/javascript" })
+    return URL.createObjectURL(blob)
+  }
   const dist = new URL("./cli/cmd/tui/worker.js", import.meta.url)
   if (await Filesystem.exists(fileURLToPath(dist))) return dist
   return new URL("./worker.ts", import.meta.url)
 }
+
+
 
 async function input(value?: string) {
   const piped = process.stdin.isTTY ? undefined : await Bun.stdin.text()
