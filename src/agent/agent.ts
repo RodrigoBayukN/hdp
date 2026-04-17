@@ -14,6 +14,7 @@ import PROMPT_EXPLORE from "./prompt/explore.txt"
 import PROMPT_SUMMARY from "./prompt/summary.txt"
 import PROMPT_TITLE from "./prompt/title.txt"
 import PROMPT_CONSULTANT from "./prompt/consultant.txt"
+import PROMPT_ARCHITECT from "./prompt/architect.txt"
 import PROMPT_ANALYST from "./prompt/analyst.txt"
 import { Permission } from "@/permission"
 import { mergeDeep, pipe, sortBy, values } from "remeda"
@@ -146,9 +147,9 @@ export namespace Agent {
               mode: "primary",
               native: true,
             },
-            consultant: {
-              name: "consultant",
-              description: "Project consultant for general questions and discussion.",
+            architect: {
+              name: "architect",
+              description: "Senior Solutions Architect specialized in Cloud and Legacy modernization.",
               options: {},
               permission: Permission.merge(
                 defaults,
@@ -156,17 +157,18 @@ export namespace Agent {
                   question: "allow",
                   edit: {
                     "*": "deny",
+                    "ARCH_DECISIONS.md": "allow",
                   },
                 }),
                 user,
               ),
-              prompt: PROMPT_CONSULTANT,
+              prompt: PROMPT_ARCHITECT,
               mode: "primary",
               native: true,
             },
             analyst: {
               name: "analyst",
-              description: "Software Architect. Specialized in analysis and design proposals.",
+              description: "Staff Software Engineer and Code Reviewer specialized in Cloud and iSeries.",
               options: {},
               permission: Permission.merge(
                 defaults,

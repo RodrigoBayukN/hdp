@@ -242,6 +242,25 @@ export namespace SessionPrompt {
               synthetic: true,
             })
           }
+
+          // Persona switch reminder
+          const lastAssistant = input.messages.findLast((msg) => msg.info.role === "assistant")
+          if (lastAssistant && lastAssistant.info.agent !== input.agent.name) {
+            userMessage.parts.push({
+              id: PartID.ascending(),
+              messageID: userMessage.info.id,
+              sessionID: userMessage.info.sessionID,
+              type: "text",
+              text: `<system-reminder>
+Your role has been switched. You are no longer acting as the "${lastAssistant.info.agent}" agent.
+You are now the "${input.agent.name}" agent. 
+Role Description: ${input.agent.description ?? "N/A"}
+Please follow your new system prompt and instructions strictly.
+</system-reminder>`,
+              synthetic: true,
+            })
+          }
+
           return input.messages
         }
 

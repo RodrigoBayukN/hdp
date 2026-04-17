@@ -31,7 +31,16 @@ export const ProjectRoutes = lazy(() =>
       validator("json", z.object({ path: z.string(), name: z.string().optional() })),
       async (c) => {
         const body = c.req.valid("json")
-        const { project } = await Project.fromDirectory(body.path)
+        const { project } = await Project.fromDirectory(body.path, { register: true })
+
+        // Reload the instance to ensure the context (and cached responses) reflect the registered state
+        await Instance.reload({
+          directory: body.path,
+          project,
+          worktree: project.worktree,
+          init: InstanceBootstrap,
+        })
+
         if (body.name) {
           return c.json(await Project.update({ projectID: project.id, name: body.name }))
         }

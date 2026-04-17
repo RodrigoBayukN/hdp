@@ -21,6 +21,7 @@ export namespace Project {
   export const Info = z
     .object({
       id: ProjectID.zod,
+      registered: z.boolean().optional(),
       worktree: z.string(),
       vcs: z.literal("git").optional(),
       name: z.string().optional(),
@@ -61,6 +62,7 @@ export namespace Project {
         : undefined
     return {
       id: row.id,
+      registered: true,
       worktree: row.worktree,
       vcs: row.vcs ? Info.shape.vcs.parse(row.vcs) : undefined,
       name: row.name ?? undefined,
@@ -88,8 +90,9 @@ export namespace Project {
   // ---------------------------------------------------------------------------
 
   export interface Interface {
-    readonly fromDirectory: (directory: string) => Effect.Effect<{ project: Info; sandbox: string }>
+    readonly fromDirectory: (directory: string, opts?: { register?: boolean }) => Effect.Effect<{ project: Info; sandbox: string }>
     readonly discover: (input: Info) => Effect.Effect<void>
+    readonly register: (input: Info) => Effect.Effect<void>
     readonly list: () => Effect.Effect<Info[]>
     readonly get: (id: ProjectID) => Effect.Effect<Info | undefined>
     readonly update: (input: UpdateInput) => Effect.Effect<Info>
@@ -144,7 +147,55 @@ export namespace Project {
           }),
         )
 
-      const fakeVcs = Info.shape.vcs.parse(Flag.OPENCODE_FAKE_VCS)
+      const register = (info: Info) =>
+        Effect.gen(function* () {
+          log.info("register", { id: info.id })
+          yield* db((d) =>
+            d
+              .insert(ProjectTable)
+              .values({
+                id: info.id,
+                worktree: info.worktree,
+                vcs: info.vcs ?? null,
+                name: info.name,
+                icon_url: info.icon?.url,
+                icon_color: info.icon?.color,
+                time_created: info.time.created,
+                time_updated: info.time.updated,
+                time_initialized: info.time.initialized,
+                sandboxes: info.sandboxes,
+                commands: info.commands,
+              })
+              .onConflictDoUpdate({
+                target: ProjectTable.id,
+                set: {
+                  worktree: info.worktree,
+                  vcs: info.vcs ?? null,
+                  name: info.name,
+                  icon_url: info.icon?.url,
+                  icon_color: info.icon?.color,
+                  time_updated: info.time.updated,
+                  time_initialized: info.time.initialized,
+                  sandboxes: info.sandboxes,
+                  commands: info.commands,
+                },
+              })
+              .run(),
+          )
+
+          if (info.id !== ProjectID.global) {
+            yield* db((d) =>
+              d
+                .update(SessionTable)
+                .set({ project_id: info.id })
+                .where(and(eq(SessionTable.project_id, ProjectID.global), eq(SessionTable.directory, info.worktree)))
+                .run(),
+            )
+          }
+          yield* emitUpdated({ ...info, registered: true })
+        })
+
+      const fakeVcs = Info.shape.vcs.parse(Flag.HDP_FAKE_VCS)
 
       const resolveGitPath = (cwd: string, name: string) => {
         if (!name) return cwd
@@ -165,8 +216,8 @@ export namespace Project {
         )
       })
 
-      const fromDirectory = Effect.fn("Project.fromDirectory")(function* (directory: string) {
-        log.info("fromDirectory", { directory })
+      const fromDirectory = Effect.fn("Project.fromDirectory")(function* (directory: string, opts?: { register?: boolean }) {
+        log.info("fromDirectory", { directory, register: opts?.register })
 
         // Phase 1: discover git info
         type DiscoveryResult = { id: ProjectID; worktree: string; sandbox: string; vcs: Info["vcs"] }
@@ -253,7 +304,6 @@ export namespace Project {
           return { id, sandbox, worktree, vcs: "git" as const }
         })
 
-        // Phase 2: upsert
         const row = yield* db((d) => d.select().from(ProjectTable).where(eq(ProjectTable.id, data.id)).get())
         const existing = row
           ? fromRow(row)
@@ -265,12 +315,16 @@ export namespace Project {
               sandboxes: [] as string[],
               time: { created: Date.now(), updated: Date.now() },
             }
+        
+        const registered = row != null
 
-        if (Flag.OPENCODE_EXPERIMENTAL_ICON_DISCOVERY)
+        if (Flag.HDP_EXPERIMENTAL_ICON_DISCOVERY && registered) {
           yield* discover(existing).pipe(Effect.ignore, Effect.forkIn(scope))
+        }
 
         const result: Info = {
           ...existing,
+          registered,
           worktree: data.worktree,
           vcs: data.vcs,
           time: { ...existing.time, updated: Date.now() },
@@ -287,47 +341,49 @@ export namespace Project {
           { concurrency: "unbounded" },
         ).pipe(Effect.map((arr) => arr.filter((x): x is string => x !== undefined)))
 
-        yield* db((d) =>
-          d
-            .insert(ProjectTable)
-            .values({
-              id: result.id,
-              worktree: result.worktree,
-              vcs: result.vcs ?? null,
-              name: result.name,
-              icon_url: result.icon?.url,
-              icon_color: result.icon?.color,
-              time_created: result.time.created,
-              time_updated: result.time.updated,
-              time_initialized: result.time.initialized,
-              sandboxes: result.sandboxes,
-              commands: result.commands,
-            })
-            .onConflictDoUpdate({
-              target: ProjectTable.id,
-              set: {
+        if (opts?.register !== false || registered) {
+          yield* db((d) =>
+            d
+              .insert(ProjectTable)
+              .values({
+                id: result.id,
                 worktree: result.worktree,
                 vcs: result.vcs ?? null,
                 name: result.name,
                 icon_url: result.icon?.url,
                 icon_color: result.icon?.color,
+                time_created: result.time.created,
                 time_updated: result.time.updated,
                 time_initialized: result.time.initialized,
                 sandboxes: result.sandboxes,
                 commands: result.commands,
-              },
-            })
-            .run(),
-        )
-
-        if (data.id !== ProjectID.global) {
-          yield* db((d) =>
-            d
-              .update(SessionTable)
-              .set({ project_id: data.id })
-              .where(and(eq(SessionTable.project_id, ProjectID.global), eq(SessionTable.directory, data.worktree)))
+              })
+              .onConflictDoUpdate({
+                target: ProjectTable.id,
+                set: {
+                  worktree: result.worktree,
+                  vcs: result.vcs ?? null,
+                  name: result.name,
+                  icon_url: result.icon?.url,
+                  icon_color: result.icon?.color,
+                  time_updated: result.time.updated,
+                  time_initialized: result.time.initialized,
+                  sandboxes: result.sandboxes,
+                  commands: result.commands,
+                },
+              })
               .run(),
           )
+  
+          if (data.id !== ProjectID.global) {
+            yield* db((d) =>
+              d
+                .update(SessionTable)
+                .set({ project_id: data.id })
+                .where(and(eq(SessionTable.project_id, ProjectID.global), eq(SessionTable.directory, data.worktree)))
+                .run(),
+            )
+          }
         }
 
         yield* emitUpdated(result)
@@ -458,6 +514,7 @@ export namespace Project {
       return Service.of({
         fromDirectory,
         discover,
+        register,
         list,
         get,
         update,
@@ -482,12 +539,16 @@ export namespace Project {
   // Promise-based API (delegates to Effect service via runPromise)
   // ---------------------------------------------------------------------------
 
-  export function fromDirectory(directory: string) {
-    return runPromise((svc) => svc.fromDirectory(directory))
+  export function fromDirectory(directory: string, opts?: { register?: boolean }) {
+    return runPromise((svc) => svc.fromDirectory(directory, opts))
   }
 
   export function discover(input: Info) {
     return runPromise((svc) => svc.discover(input))
+  }
+
+  export function register(input: Info) {
+    return runPromise((svc) => svc.register(input))
   }
 
   export function list() {

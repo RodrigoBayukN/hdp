@@ -15,6 +15,7 @@ import type { EventSource } from "./context/sdk"
 import { win32DisableProcessedInput, win32InstallCtrlCGuard } from "./win32"
 import { TuiConfig } from "@/config/tui"
 import { Instance } from "@/project/instance"
+import { Config } from "@/config/config"
 import { writeHeapSnapshot } from "v8"
 
 declare global {
@@ -119,9 +120,18 @@ export const TuiThreadCommand = cmd({
       // Resolve relative --project paths from PWD, then use the real cwd after
       // chdir so the thread and worker share the same directory key.
       const root = Filesystem.resolve(process.env.PWD ?? process.cwd())
-      const next = args.project
+      const global = await Config.getGlobal()
+
+      let next = args.project
         ? Filesystem.resolve(path.isAbsolute(args.project) ? args.project : path.join(root, args.project))
-        : Filesystem.resolve(process.cwd())
+        : global.default_directory
+          ? Filesystem.resolve(
+              path.isAbsolute(global.default_directory)
+                ? global.default_directory
+                : path.join(os.homedir(), global.default_directory),
+            )
+          : Filesystem.resolve(process.cwd())
+
       const file = await target()
       try {
         process.chdir(next)

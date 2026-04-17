@@ -1098,6 +1098,10 @@ export namespace Config {
             .describe("Timeout in milliseconds for model context protocol (MCP) requests"),
         })
         .optional(),
+      default_directory: z
+        .string()
+        .optional()
+        .describe("Default directory to start HDP in when no path is provided."),
     })
     .strict()
     .meta({
@@ -1126,10 +1130,10 @@ export namespace Config {
     readonly waitForDependencies: () => Effect.Effect<void>
   }
 
-  export class Service extends Context.Service<Service, Interface>()("@opencode/Config") {}
+  export class Service extends Context.Service<Service, Interface>()("@hdp/Config") {}
 
   function globalConfigFile() {
-    const candidates = ["opencode.jsonc", "opencode.json", "config.json"].map((file) =>
+    const candidates = ["hdp.jsonc", "hdp.json", "config.json"].map((file) =>
       path.join(Global.Path.config, file),
     )
     for (const file of candidates) {
@@ -1245,15 +1249,15 @@ export namespace Config {
             delete copy.theme
             delete copy.keybinds
             delete copy.tui
-            log.warn("tui keys in opencode config are deprecated; move them to tui.json", { path: source })
+            log.warn("tui keys in hdp config are deprecated; move them to tui.json", { path: source })
             return copy
           })()
 
           const parsed = Info.safeParse(normalized)
           if (parsed.success) {
             if (!parsed.data.$schema && isFile) {
-              parsed.data.$schema = "https://opencode.ai/config.json"
-              const updated = original.replace(/^\s*\{/, '{\n  "$schema": "https://opencode.ai/config.json",')
+              parsed.data.$schema = "https://hdp.ai/config.json"
+              const updated = original.replace(/^\s*\{/, '{\n  "$schema": "https://hdp.ai/config.json",')
               yield* fs.writeFileString(options.path, updated).pipe(Effect.catch(() => Effect.void))
             }
             const data = parsed.data
@@ -1283,8 +1287,8 @@ export namespace Config {
           let result: Info = pipe(
             {},
             mergeDeep(yield* loadFile(path.join(Global.Path.config, "config.json"))),
-            mergeDeep(yield* loadFile(path.join(Global.Path.config, "opencode.json"))),
-            mergeDeep(yield* loadFile(path.join(Global.Path.config, "opencode.jsonc"))),
+            mergeDeep(yield* loadFile(path.join(Global.Path.config, "hdp.json"))),
+            mergeDeep(yield* loadFile(path.join(Global.Path.config, "hdp.jsonc"))),
           )
 
           const legacy = path.join(Global.Path.config, "config")
@@ -1329,7 +1333,7 @@ export namespace Config {
 
           const scope = Effect.fnUntraced(function* (source: string) {
             if (source.startsWith("http://") || source.startsWith("https://")) return "global"
-            if (source === "OPENCODE_CONFIG_CONTENT") return "local"
+            if (source === "HDP_CONFIG_CONTENT") return "local"
             if (yield* InstanceRef.use((ctx) => Effect.succeed(Instance.containsPath(source, ctx)))) return "local"
             return "global"
           })
@@ -1365,8 +1369,8 @@ export namespace Config {
               }
               const wellknown = (yield* Effect.promise(() => response.json())) as any
               const remoteConfig = wellknown.config ?? {}
-              if (!remoteConfig.$schema) remoteConfig.$schema = "https://opencode.ai/config.json"
-              const source = `${url}/.well-known/opencode`
+              if (!remoteConfig.$schema) remoteConfig.$schema = "https://hdp.ai/config.json"
+              const source = `${url}/.well-known/hdp`
               const next = yield* loadConfig(JSON.stringify(remoteConfig), {
                 dir: path.dirname(source),
                 source,
@@ -1379,14 +1383,14 @@ export namespace Config {
           const global = yield* getGlobal()
           yield* merge(Global.Path.config, global, "global")
 
-          if (Flag.OPENCODE_CONFIG) {
-            yield* merge(Flag.OPENCODE_CONFIG, yield* loadFile(Flag.OPENCODE_CONFIG))
-            log.debug("loaded custom config", { path: Flag.OPENCODE_CONFIG })
+          if (Flag.HDP_CONFIG) {
+            yield* merge(Flag.HDP_CONFIG, yield* loadFile(Flag.HDP_CONFIG))
+            log.debug("loaded custom config", { path: Flag.HDP_CONFIG })
           }
 
-          if (!Flag.OPENCODE_DISABLE_PROJECT_CONFIG) {
+          if (!Flag.HDP_DISABLE_PROJECT_CONFIG) {
             for (const file of yield* Effect.promise(() =>
-              ConfigPaths.projectFiles("opencode", ctx.directory, ctx.worktree),
+              ConfigPaths.projectFiles("hdp", ctx.directory, ctx.worktree),
             )) {
               yield* merge(file, yield* loadFile(file), "local")
             }
@@ -1405,8 +1409,8 @@ export namespace Config {
           const deps: Promise<void>[] = []
 
           for (const dir of unique(directories)) {
-            if (dir.endsWith(".opencode") || dir === Flag.OPENCODE_CONFIG_DIR) {
-              for (const file of ["opencode.json", "opencode.jsonc"]) {
+            if (dir.endsWith(".hdp") || dir === Flag.HDP_CONFIG_DIR) {
+              for (const file of ["hdp.json", "hdp.jsonc"]) {
                 const source = path.join(dir, file)
                 log.debug(`loading config from ${source}`)
                 yield* merge(source, yield* loadFile(source))
@@ -1431,14 +1435,14 @@ export namespace Config {
             yield* track(dir, list)
           }
 
-          if (process.env.OPENCODE_CONFIG_CONTENT) {
-            const source = "OPENCODE_CONFIG_CONTENT"
-            const next = yield* loadConfig(process.env.OPENCODE_CONFIG_CONTENT, {
+          if (process.env.HDP_CONFIG_CONTENT) {
+            const source = "HDP_CONFIG_CONTENT"
+            const next = yield* loadConfig(process.env.HDP_CONFIG_CONTENT, {
               dir: ctx.directory,
               source,
             })
             yield* merge(source, next, "local")
-            log.debug("loaded custom config from OPENCODE_CONFIG_CONTENT")
+            log.debug("loaded custom config from HDP_CONFIG_CONTENT")
           }
 
           const activeOrg = Option.getOrUndefined(
@@ -1451,8 +1455,8 @@ export namespace Config {
                 { concurrency: 2 },
               )
               if (Option.isSome(tokenOpt)) {
-                process.env["OPENCODE_CONSOLE_TOKEN"] = tokenOpt.value
-                Env.set("OPENCODE_CONSOLE_TOKEN", tokenOpt.value)
+                process.env["HDP_CONSOLE_TOKEN"] = tokenOpt.value
+                Env.set("HDP_CONSOLE_TOKEN", tokenOpt.value)
               }
 
               activeOrgName = activeOrg.org.name
@@ -1479,7 +1483,7 @@ export namespace Config {
           }
 
           if (existsSync(managedDir)) {
-            for (const file of ["opencode.json", "opencode.jsonc"]) {
+            for (const file of ["hdp.json", "hdp.jsonc"]) {
               const source = path.join(managedDir, file)
               yield* merge(source, yield* loadFile(source), "global")
             }
@@ -1497,8 +1501,8 @@ export namespace Config {
             })
           }
 
-          if (Flag.OPENCODE_PERMISSION) {
-            result.permission = mergeDeep(result.permission ?? {}, JSON.parse(Flag.OPENCODE_PERMISSION))
+          if (Flag.HDP_PERMISSION) {
+            result.permission = mergeDeep(result.permission ?? {}, JSON.parse(Flag.HDP_PERMISSION))
           }
 
           if (result.tools) {
@@ -1520,10 +1524,10 @@ export namespace Config {
             result.share = "auto"
           }
 
-          if (Flag.OPENCODE_DISABLE_AUTOCOMPACT) {
+          if (Flag.HDP_DISABLE_AUTOCOMPACT) {
             result.compaction = { ...result.compaction, auto: false }
           }
-          if (Flag.OPENCODE_DISABLE_PRUNE) {
+          if (Flag.HDP_DISABLE_PRUNE) {
             result.compaction = { ...result.compaction, prune: false }
           }
 

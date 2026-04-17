@@ -381,6 +381,9 @@ export namespace Session {
         permission?: Permission.Ruleset
       }) {
         const ctx = yield* InstanceState.context
+        if (ctx.project.registered === false) {
+          yield* Effect.promise(() => Project.register(ctx.project))
+        }
         const result: Info = {
           id: SessionID.descending(input.id),
           slug: Slug.create(),

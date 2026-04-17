@@ -13,6 +13,7 @@ export const { use: useProject, provider: ProjectProvider } = createSimpleContex
     const [store, setStore] = createStore({
       project: {
         id: undefined as string | undefined,
+        registered: false,
       },
       instance: {
         path: {
@@ -39,6 +40,7 @@ export const { use: useProject, provider: ProjectProvider } = createSimpleContex
         setStore("instance", "path", "state", "")
         setStore("instance", "path", "home", "")
       })
+      sync()
     })
 
     async function sync() {
@@ -51,6 +53,7 @@ export const { use: useProject, provider: ProjectProvider } = createSimpleContex
       batch(() => {
         setStore("instance", "path", reconcile(path.data!))
         setStore("project", "id", project.data?.id)
+        setStore("project", "registered", project.data?.registered ?? false)
       })
     }
 
@@ -73,12 +76,18 @@ export const { use: useProject, provider: ProjectProvider } = createSimpleContex
       if (event.payload.type === "workspace.status") {
         setStore("workspace", "status", event.payload.properties.workspaceID, event.payload.properties.status)
       }
+      if (event.payload.type === "project.updated") {
+        sync()
+      }
     })
 
     return {
       data: store,
       project() {
         return store.project.id
+      },
+      registered() {
+        return store.project.registered
       },
       instance: {
         path() {
