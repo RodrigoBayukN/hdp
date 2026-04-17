@@ -5,6 +5,9 @@
   "type": "module",
   "license": "MIT",
   "private": true,
+  "workspaces": [
+    "lib/*"
+  ],
   "scripts": {
     "typecheck": "tsgo --noEmit",
     "test": "bun test --timeout 30000",
@@ -60,11 +63,9 @@
     "@types/yargs": "17.0.33",
     "@typescript/native-preview": "7.0.0-dev.20251207.1",
     "drizzle-kit": "1.0.0-beta.19-d95b7a4",
-    "drizzle-orm": "1.0.0-beta.19-d95b7a4",
     "typescript": "5.8.2",
     "vscode-languageserver-types": "3.17.5",
-    "why-is-node-running": "3.2.2",
-    "zod-to-json-schema": "3.24.5"
+    "why-is-node-running": "3.2.2"
   },
   "dependencies": {
     "@actions/core": "1.11.1",
@@ -113,7 +114,6 @@
     "@solid-primitives/scheduled": "1.5.2",
     "@standard-community/standard-json": "^0.3.5",
     "@standard-community/standard-openapi": "0.2.9",
-    "@standard-schema/spec": "1.0.0",
     "@zip.js/zip.js": "2.7.62",
     "ai": "6.0.158",
     "ai-gateway-provider": "3.1.2",
@@ -161,7 +161,9 @@
     "xdg-basedir": "5.1.0",
     "yargs": "18.0.0",
     "zod": "4.1.8",
-    "zod-to-json-schema": "3.24.5"
+    "zod-to-json-schema": "3.24.5",
+    "@hdp/plugin": "workspace:*",
+    "@hdp/sdk": "workspace:*"
   },
   "overrides": {
     "drizzle-orm": "1.0.0-beta.19-d95b7a4"
