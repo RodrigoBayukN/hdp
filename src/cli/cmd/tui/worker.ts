@@ -7,7 +7,7 @@ import { Rpc } from "@/util/rpc"
 import { upgrade } from "@/cli/upgrade"
 import { Config } from "@/config/config"
 import { GlobalBus } from "@/bus/global"
-import type { GlobalEvent } from "@opencode-ai/sdk/v2"
+import type { GlobalEvent } from "@hdp/sdk/v2"
 import { Flag } from "@/flag/flag"
 import { writeHeapSnapshot } from "node:v8"
 import { Heap } from "@/cli/heap"
@@ -94,8 +94,8 @@ export const rpc = {
 Rpc.listen(rpc)
 
 function getAuthorizationHeader(): string | undefined {
-  const password = Flag.OPENCODE_SERVER_PASSWORD
+  const password = Flag.HDP_SERVER_PASSWORD
   if (!password) return undefined
-  const username = Flag.OPENCODE_SERVER_USERNAME ?? "opencode"
+  const username = Flag.HDP_SERVER_USERNAME ?? "hdp"
   return `Basic ${btoa(`${username}:${password}`)}`
 }

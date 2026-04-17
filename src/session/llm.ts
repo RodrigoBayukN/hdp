@@ -51,7 +51,7 @@ export namespace LLM {
     readonly stream: (input: StreamInput) => Stream.Stream<Event, unknown>
   }
 
-  export class Service extends Context.Service<Service, Interface>()("@opencode/LLM") {}
+  export class Service extends Context.Service<Service, Interface>()("@hdp/LLM") {}
 
   export const layer = Layer.effect(
     Service,
@@ -231,7 +231,7 @@ export namespace LLM {
     }
 
     // Wire up toolExecutor for DWS workflow models so that tool calls
-    // from the workflow service are executed via opencode's tool system
+    // from the workflow service are executed via hdp's tool system
     // and results sent back over the WebSocket.
     if (language instanceof GitLabWorkflowLanguageModel) {
       const workflowModel = language as GitLabWorkflowLanguageModel & {
@@ -352,17 +352,17 @@ export namespace LLM {
       maxOutputTokens: params.maxOutputTokens,
       abortSignal: input.abort,
       headers: {
-        ...(input.model.providerID.startsWith("opencode")
+        ...(input.model.providerID.startsWith("hdp")
           ? {
-              "x-opencode-project": Instance.project.id,
-              "x-opencode-session": input.sessionID,
-              "x-opencode-request": input.user.id,
-              "x-opencode-client": Flag.OPENCODE_CLIENT,
+              "x-hdp-project": Instance.project.id,
+              "x-hdp-session": input.sessionID,
+              "x-hdp-request": input.user.id,
+              "x-hdp-client": Flag.HDP_CLIENT,
             }
           : {
               "x-session-affinity": input.sessionID,
               ...(input.parentSessionID ? { "x-parent-session-id": input.parentSessionID } : {}),
-              "User-Agent": `opencode/${Installation.VERSION}`,
+              "User-Agent": `hdp/${Installation.VERSION}`,
             }),
         ...input.model.headers,
         ...headers,

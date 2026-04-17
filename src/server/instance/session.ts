@@ -24,7 +24,7 @@ import { ModelID, ProviderID } from "@/provider/schema"
 import { errors } from "../error"
 import { lazy } from "../../util/lazy"
 import { Bus } from "../../bus"
-import { NamedError } from "@opencode-ai/util/error"
+import { NamedError } from "@hdp/util/error"
 
 const log = Log.create({ service: "server" })
 
@@ -34,7 +34,7 @@ export const SessionRoutes = lazy(() =>
       "/",
       describeRoute({
         summary: "List sessions",
-        description: "Get a list of all OpenCode sessions, sorted by most recently updated.",
+        description: "Get a list of all HDP sessions, sorted by most recently updated.",
         operationId: "session.list",
         responses: {
           200: {
@@ -102,7 +102,7 @@ export const SessionRoutes = lazy(() =>
       "/:sessionID",
       describeRoute({
         summary: "Get session",
-        description: "Retrieve detailed information about a specific OpenCode session.",
+        description: "Retrieve detailed information about a specific HDP session.",
         tags: ["Session"],
         operationId: "session.get",
         responses: {
@@ -194,7 +194,7 @@ export const SessionRoutes = lazy(() =>
       "/",
       describeRoute({
         summary: "Create session",
-        description: "Create a new OpenCode session for interacting with AI assistants and managing conversations.",
+        description: "Create a new HDP session for interacting with AI assistants and managing conversations.",
         operationId: "session.create",
         responses: {
           ...errors(400),

@@ -17,9 +17,9 @@ bun run build        # Builds the project (check if script/build.ts exists)
 
 - `@/*` → `./src/*`
 - `@tui/*` → `./src/cli/cmd/tui/*`
-- `@opencode-ai/util/*` → `./lib/util/*`
-- `@opencode-ai/plugin` → `./lib/plugin/index`
-- `@opencode-ai/sdk` → `./lib/sdk/index`
+- `@hdp/util/*` → `./lib/util/*`
+- `@hdp/plugin` → `./lib/plugin/index`
+- `@hdp/sdk` → `./lib/sdk/index`
 
 ## Architecture
 

@@ -11,7 +11,7 @@ import { UninstallCommand } from "./cli/cmd/uninstall"
 import { ModelsCommand } from "./cli/cmd/models"
 import { UI } from "./cli/ui"
 import { Installation } from "./installation"
-import { NamedError } from "@opencode-ai/util/error"
+import { NamedError } from "@hdp/util/error"
 import { FormatError } from "./cli/error"
 import { ServeCommand } from "./cli/cmd/serve"
 import { Filesystem } from "./util/filesystem"
@@ -87,7 +87,7 @@ const cli = yargs(args)
   })
   .middleware(async (opts) => {
     if (opts.pure) {
-      process.env.OPENCODE_PURE = "1"
+      process.env.HDP_PURE = "1"
     }
 
     await Log.init({

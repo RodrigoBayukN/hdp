@@ -1,4 +1,4 @@
-import type { TuiPlugin, TuiPluginApi, TuiPluginModule } from "@opencode-ai/plugin/tui"
+import type { TuiPlugin, TuiPluginApi, TuiPluginModule } from "@hdp/plugin/tui"
 
 const id = "internal:sidebar-context"
 

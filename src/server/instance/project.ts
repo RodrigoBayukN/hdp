@@ -51,7 +51,7 @@ export const ProjectRoutes = lazy(() =>
       "/",
       describeRoute({
         summary: "List all projects",
-        description: "Get a list of projects that have been opened with OpenCode.",
+        description: "Get a list of projects that have been opened with HDP.",
         operationId: "project.list",
         responses: {
           200: {
@@ -73,7 +73,7 @@ export const ProjectRoutes = lazy(() =>
       "/current",
       describeRoute({
         summary: "Get current project",
-        description: "Retrieve the currently active project that OpenCode is working with.",
+        description: "Retrieve the currently active project that HDP is working with.",
         operationId: "project.current",
         responses: {
           200: {

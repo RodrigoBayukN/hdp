@@ -104,7 +104,7 @@ export namespace Project {
     readonly remove: (id: ProjectID) => Effect.Effect<void>
   }
 
-  export class Service extends Context.Service<Service, Interface>()("@opencode/Project") {}
+  export class Service extends Context.Service<Service, Interface>()("@hdp/Project") {}
 
   type GitResult = { code: number; text: string; stderr: string }
 
@@ -209,7 +209,7 @@ export namespace Project {
       const scope = yield* Scope.Scope
 
       const readCachedProjectId = Effect.fnUntraced(function* (dir: string) {
-        return yield* fs.readFileString(pathSvc.join(dir, "opencode")).pipe(
+        return yield* fs.readFileString(pathSvc.join(dir, "hdp")).pipe(
           Effect.map((x) => x.trim()),
           Effect.map(ProjectID.make),
           Effect.catch(() => Effect.void),
@@ -282,7 +282,7 @@ export namespace Project {
 
             id = roots[0] ? ProjectID.make(roots[0]) : undefined
             if (id) {
-              yield* fs.writeFileString(pathSvc.join(worktree, ".git", "opencode"), id).pipe(Effect.ignore)
+              yield* fs.writeFileString(pathSvc.join(worktree, ".git", "hdp"), id).pipe(Effect.ignore)
             }
           }
 

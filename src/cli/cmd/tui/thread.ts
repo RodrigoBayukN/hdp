@@ -10,7 +10,7 @@ import { errorMessage } from "@/util/error"
 import { withTimeout } from "@/util/timeout"
 import { withNetworkOptions, resolveNetworkOptions } from "@/cli/network"
 import { Filesystem } from "@/util/filesystem"
-import type { GlobalEvent } from "@opencode-ai/sdk/v2"
+import type { GlobalEvent } from "@hdp/sdk/v2"
 import type { EventSource } from "./context/sdk"
 import { win32DisableProcessedInput, win32InstallCtrlCGuard } from "./win32"
 import { TuiConfig } from "@/config/tui"
@@ -19,7 +19,7 @@ import { Config } from "@/config/config"
 import { writeHeapSnapshot } from "v8"
 
 declare global {
-  const OPENCODE_WORKER_PATH: string
+  const HDP_WORKER_PATH: string
 }
 
 type RpcClient = ReturnType<typeof Rpc.client<typeof rpc>>
@@ -53,7 +53,7 @@ function createEventSource(client: RpcClient): EventSource {
 }
 
 async function target() {
-  if (typeof OPENCODE_WORKER_PATH !== "undefined") return OPENCODE_WORKER_PATH
+  if (typeof HDP_WORKER_PATH !== "undefined") return HDP_WORKER_PATH
   const dist = new URL("./cli/cmd/tui/worker.js", import.meta.url)
   if (await Filesystem.exists(fileURLToPath(dist))) return dist
   return new URL("./worker.ts", import.meta.url)
@@ -208,7 +208,7 @@ export const TuiThreadCommand = cmd({
             events: undefined,
           }
         : {
-            url: "http://opencode.internal",
+            url: "http://hdp.internal",
             fetch: createWorkerFetch(client),
             events: createEventSource(client),
           }

@@ -58,7 +58,7 @@ export namespace SessionCompaction {
     }) => Effect.Effect<void>
   }
 
-  export class Service extends Context.Service<Service, Interface>()("@opencode/SessionCompaction") {}
+  export class Service extends Context.Service<Service, Interface>()("@hdp/SessionCompaction") {}
 
   export const layer: Layer.Layer<
     Service,

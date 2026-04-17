@@ -8,7 +8,7 @@ import { Log } from "../util/log"
 import { Npm } from "../npm"
 import { Hash } from "../util/hash"
 import { Plugin } from "../plugin"
-import { NamedError } from "@opencode-ai/util/error"
+import { NamedError } from "@hdp/util/error"
 import { type LanguageModelV3 } from "@ai-sdk/provider"
 import { ModelsDev } from "./models"
 import { Auth } from "../auth"
@@ -116,7 +116,7 @@ export namespace Provider {
   }
 
   function e2eURL() {
-    const url = Env.get("OPENCODE_E2E_LLM_URL")
+    const url = Env.get("HDP_E2E_LLM_URL")
     if (typeof url !== "string" || url === "") return
     return url
   }
@@ -181,7 +181,7 @@ export namespace Provider {
             },
           },
         }),
-      opencode: Effect.fnUntraced(function* (input: Info) {
+      hdp: Effect.fnUntraced(function* (input: Info) {
         const env = Env.all()
         const hasKey = iife(() => {
           if (input.env.some((item) => env[item])) return true
@@ -190,7 +190,7 @@ export namespace Provider {
         const ok =
           hasKey ||
           Boolean(yield* dep.auth(input.id)) ||
-          Boolean((yield* dep.config()).provider?.["opencode"]?.options?.apiKey)
+          Boolean((yield* dep.config()).provider?.[input.id]?.options?.apiKey)
 
         if (!ok) {
           for (const [key, value] of Object.entries(input.models)) {
@@ -204,6 +204,7 @@ export namespace Provider {
           options: ok ? {} : { apiKey: "public" },
         }
       }),
+      opencode: (input: Info) => (custom(dep).hdp as any)(input),
       openai: () =>
         Effect.succeed({
           autoload: false,
@@ -339,7 +340,7 @@ export namespace Provider {
             }
 
             // Region resolution precedence (highest to lowest):
-            // 1. options.region from opencode.json provider config
+            // 1. options.region from hdp.json provider config
             // 2. defaultRegion from AWS_REGION environment variable
             // 3. Default "us-east-1" (baked into defaultRegion)
             const region = options?.region ?? defaultRegion
@@ -422,8 +423,8 @@ export namespace Provider {
           autoload: false,
           options: {
             headers: {
-              "HTTP-Referer": "https://opencode.ai/",
-              "X-Title": "opencode",
+              "HTTP-Referer": "https://hdp.ai/",
+              "X-Title": "hdp",
             },
           },
         }),
@@ -432,8 +433,8 @@ export namespace Provider {
           autoload: false,
           options: {
             headers: {
-              "http-referer": "https://opencode.ai/",
-              "x-title": "opencode",
+              "http-referer": "https://hdp.ai/",
+              "x-title": "hdp",
             },
           },
         }),
@@ -531,8 +532,8 @@ export namespace Provider {
           autoload: false,
           options: {
             headers: {
-              "HTTP-Referer": "https://opencode.ai/",
-              "X-Title": "opencode",
+              "HTTP-Referer": "https://hdp.ai/",
+              "X-Title": "hdp",
             },
           },
         }),
@@ -549,7 +550,7 @@ export namespace Provider {
         const providerConfig = (yield* dep.config()).provider?.["gitlab"]
 
         const aiGatewayHeaders = {
-          "User-Agent": `opencode/${Installation.VERSION} gitlab-ai-provider/${GITLAB_PROVIDER_VERSION} (${os.platform()} ${os.release()}; ${os.arch()})`,
+          "User-Agent": `hdp/${Installation.VERSION} gitlab-ai-provider/${GITLAB_PROVIDER_VERSION} (${os.platform()} ${os.release()}; ${os.arch()})`,
           "anthropic-beta": "context-1m-2025-08-07",
           ...(providerConfig?.options?.aiGatewayHeaders || {}),
         }
@@ -703,7 +704,7 @@ export namespace Provider {
           options: {
             apiKey,
             headers: {
-              "User-Agent": `opencode/${Installation.VERSION} cloudflare-workers-ai (${os.platform()} ${os.release()}; ${os.arch()})`,
+              "User-Agent": `hdp/${Installation.VERSION} cloudflare-workers-ai (${os.platform()} ${os.release()}; ${os.arch()})`,
             },
           },
           async getModel(sdk: any, modelID: string) {
@@ -752,7 +753,7 @@ export namespace Provider {
         if (!apiToken) {
           throw new Error(
             "CLOUDFLARE_API_TOKEN (or CF_AIG_TOKEN) is required for Cloudflare AI Gateway. " +
-              "Set it via environment variable or run `opencode auth cloudflare-ai-gateway`.",
+              "Set it via environment variable or run `hdp auth cloudflare-ai-gateway`.",
           )
         }
 
@@ -775,7 +776,7 @@ export namespace Provider {
           skipCache: input.options?.skipCache,
           collectLog: input.options?.collectLog,
           headers: {
-            "User-Agent": `opencode/${Installation.VERSION} cloudflare-ai-gateway (${os.platform()} ${os.release()}; ${os.arch()})`,
+            "User-Agent": `hdp/${Installation.VERSION} cloudflare-ai-gateway (${os.platform()} ${os.release()}; ${os.arch()})`,
           },
         }
 
@@ -801,7 +802,7 @@ export namespace Provider {
           autoload: false,
           options: {
             headers: {
-              "X-Cerebras-3rd-Party-Integration": "opencode",
+              "X-Cerebras-3rd-Party-Integration": "hdp",
             },
           },
         }),
@@ -810,8 +811,8 @@ export namespace Provider {
           autoload: false,
           options: {
             headers: {
-              "HTTP-Referer": "https://opencode.ai/",
-              "X-Title": "opencode",
+              "HTTP-Referer": "https://hdp.ai/",
+              "X-Title": "hdp",
             },
           },
         }),
@@ -925,7 +926,7 @@ export namespace Provider {
     varsLoaders: Record<string, CustomVarsLoader>
   }
 
-  export class Service extends Context.Service<Service, Interface>()("@opencode/Provider") {}
+  export class Service extends Context.Service<Service, Interface>()("@hdp/Provider") {}
 
   function cost(c: ModelsDev.Model["cost"]): Model["cost"] {
     const result: Model["cost"] = {
@@ -1316,7 +1317,7 @@ export namespace Provider {
                 (providerID === ProviderID.openrouter && modelID === "openai/gpt-5-chat")
               )
                 delete provider.models[modelID]
-              if (model.status === "alpha" && !Flag.OPENCODE_ENABLE_EXPERIMENTAL_MODELS) delete provider.models[modelID]
+              if (model.status === "alpha" && !Flag.HDP_ENABLE_EXPERIMENTAL_MODELS) delete provider.models[modelID]
               if (model.status === "deprecated") delete provider.models[modelID]
               if (
                 (configProvider?.blacklist && configProvider.blacklist.includes(modelID)) ||
@@ -1591,7 +1592,7 @@ export namespace Provider {
           "gemini-2.5-flash",
           "gpt-5-nano",
         ]
-        if (providerID.startsWith("opencode")) {
+        if (providerID.startsWith("hdp") || providerID.startsWith("opencode")) {
           priority = ["gpt-5-nano"]
         }
         if (providerID.startsWith("github-copilot")) {

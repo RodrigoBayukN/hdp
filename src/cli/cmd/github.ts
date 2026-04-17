@@ -137,9 +137,9 @@ type IssueQueryResponse = {
   }
 }
 
-const AGENT_USERNAME = "opencode-agent[bot]"
+const AGENT_USERNAME = "hdp-agent[bot]"
 const AGENT_REACTION = "eyes"
-const WORKFLOW_FILE = ".github/workflows/opencode.yml"
+const WORKFLOW_FILE = ".github/workflows/hdp.yml"
 
 // Event categories for routing
 // USER_EVENTS: triggered by user actions, have actor/issueId, support reactions/comments
@@ -246,7 +246,7 @@ export const GithubInstallCommand = cmd({
                 "",
                 "    3. Go to a GitHub issue and comment `/oc summarize` to see the agent in action",
                 "",
-                "   Learn more about the GitHub agent - https://opencode.ai/docs/github/#usage-examples",
+                "   Learn more about the GitHub agent - https://hdp.ai/docs/github/#usage-examples",
               ].join("\n"),
             )
           }
@@ -272,7 +272,7 @@ export const GithubInstallCommand = cmd({
 
           async function promptProvider() {
             const priority: Record<string, number> = {
-              opencode: 0,
+              hdp: 0,
               anthropic: 1,
               openai: 2,
               google: 3,
@@ -330,7 +330,7 @@ export const GithubInstallCommand = cmd({
             if (installation) return s.stop("GitHub app already installed")
 
             // Open browser
-            const url = "https://github.com/apps/opencode-agent"
+            const url = "https://github.com/apps/hdp-agent"
             const command =
               process.platform === "darwin"
                 ? `open "${url}"`
@@ -367,7 +367,7 @@ export const GithubInstallCommand = cmd({
 
             async function getInstallation() {
               return await fetch(
-                `https://api.opencode.ai/get_github_app_installation?owner=${app.owner}&repo=${app.repo}`,
+                `https://api.hdp.ai/get_github_app_installation?owner=${app.owner}&repo=${app.repo}`,
               )
                 .then((res) => res.json())
                 .then((data) => data.installation)
@@ -382,7 +382,7 @@ export const GithubInstallCommand = cmd({
 
             await Filesystem.write(
               path.join(app.root, WORKFLOW_FILE),
-              `name: opencode
+              `name: hdp
 
 on:
   issue_comment:
@@ -391,12 +391,12 @@ on:
     types: [created]
 
 jobs:
-  opencode:
+  hdp:
     if: |
       contains(github.event.comment.body, ' /oc') ||
       startsWith(github.event.comment.body, '/oc') ||
-      contains(github.event.comment.body, ' /opencode') ||
-      startsWith(github.event.comment.body, '/opencode')
+      contains(github.event.comment.body, ' /hdp') ||
+      startsWith(github.event.comment.body, '/hdp')
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -409,8 +409,8 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Run opencode
-        uses: anomalyco/opencode/github@latest${envStr}
+      - name: Run hdp
+        uses: anomalyco/hdp/github@latest${envStr}
         with:
           model: ${provider}/${model}`,
             )
@@ -480,7 +480,7 @@ export const GithubRunCommand = cmd({
           ? (payload as IssueCommentEvent | IssuesEvent).issue.number
           : (payload as PullRequestEvent | PullRequestReviewCommentEvent).pull_request.number
       const runUrl = `/${owner}/${repo}/actions/runs/${runId}`
-      const shareBaseUrl = isMock ? "https://dev.opencode.ai" : "https://opencode.ai"
+      const shareBaseUrl = isMock ? "https://dev.hdp.ai" : "https://hdp.ai"
 
       let appToken: string
       let octoRest: Octokit
@@ -549,7 +549,7 @@ export const GithubRunCommand = cmd({
           await addReaction(commentType)
         }
 
-        // Setup opencode session
+        // Setup hdp session
         const repoData = await fetchRepo()
         session = await Session.create({
           permission: [
@@ -570,7 +570,7 @@ export const GithubRunCommand = cmd({
           return session.id.slice(-8)
         })()
         */
-        console.log("opencode session", session.id)
+        console.log("hdp session", session.id)
 
         // Handle event types:
         // REPO_EVENTS (schedule, workflow_dispatch): no issue/PR context, output to logs/PR only
@@ -743,7 +743,7 @@ export const GithubRunCommand = cmd({
 
       function normalizeOidcBaseUrl(): string {
         const value = process.env["OIDC_BASE_URL"]
-        if (!value) return "https://api.opencode.ai"
+        if (!value) return "https://api.hdp.ai"
         return value.replace(/\/+$/, "")
       }
 
@@ -792,7 +792,7 @@ export const GithubRunCommand = cmd({
         }
 
         const reviewContext = getReviewCommentContext()
-        const mentions = (process.env["MENTIONS"] || "/opencode,/oc")
+        const mentions = (process.env["MENTIONS"] || "/hdp,/oc")
           .split(",")
           .map((m) => m.trim().toLowerCase())
           .filter(Boolean)
@@ -938,7 +938,7 @@ export const GithubRunCommand = cmd({
       }
 
       async function chat(message: string, files: PromptFiles = []) {
-        console.log("Sending message to opencode...")
+        console.log("Sending message to hdp...")
 
         const result = await SessionPrompt.prompt({
           sessionID: session.id,
@@ -1034,7 +1034,7 @@ export const GithubRunCommand = cmd({
 
       async function getOidcToken() {
         try {
-          return await core.getIDToken("opencode-github-action")
+          return await core.getIDToken("hdp-github-action")
         } catch (error) {
           console.error("Failed to get OIDC token:", error instanceof Error ? error.message : error)
           throw new Error(
@@ -1136,9 +1136,9 @@ export const GithubRunCommand = cmd({
           .join("")
         if (type === "schedule" || type === "dispatch") {
           const hex = crypto.randomUUID().slice(0, 6)
-          return `opencode/${type}-${hex}-${timestamp}`
+          return `hdp/${type}-${hex}-${timestamp}`
         }
-        return `opencode/${type}${issueId}-${timestamp}`
+        return `hdp/${type}${issueId}-${timestamp}`
       }
 
       async function pushToNewBranch(summary: string, branch: string, commit: boolean, isSchedule: boolean) {
@@ -1410,9 +1410,9 @@ export const GithubRunCommand = cmd({
           const titleAlt = encodeURIComponent(session.title.substring(0, 50))
           const title64 = Buffer.from(session.title.substring(0, 700), "utf8").toString("base64")
 
-          return `<a href="${shareBaseUrl}/s/${shareId}"><img width="200" alt="${titleAlt}" src="https://social-cards.sst.dev/opencode-share/${title64}.png?model=${providerID}/${modelID}&version=${session.version}&id=${shareId}" /></a>\n`
+          return `<a href="${shareBaseUrl}/s/${shareId}"><img width="200" alt="${titleAlt}" src="https://social-cards.sst.dev/hdp-share/${title64}.png?model=${providerID}/${modelID}&version=${session.version}&id=${shareId}" /></a>\n`
         })()
-        const shareUrl = shareId ? `[opencode session](${shareBaseUrl}/s/${shareId})&nbsp;&nbsp;|&nbsp;&nbsp;` : ""
+        const shareUrl = shareId ? `[hdp session](${shareBaseUrl}/s/${shareId})&nbsp;&nbsp;|&nbsp;&nbsp;` : ""
         return `\n\n${image}${shareUrl}[github run](${runUrl})`
       }
 
@@ -1473,7 +1473,7 @@ query($owner: String!, $repo: String!, $number: Int!) {
         return [
           "<github_action_context>",
           "You are running as a GitHub Action. Important:",
-          "- Git push and PR creation are handled AUTOMATICALLY by the opencode infrastructure after your response",
+          "- Git push and PR creation are handled AUTOMATICALLY by the hdp infrastructure after your response",
           "- Do NOT include warnings or disclaimers about GitHub tokens, workflow permissions, or PR creation capabilities",
           "- Do NOT suggest manual steps for creating PRs or pushing code - this happens automatically",
           "- Focus only on the code changes and your analysis/response",
@@ -1611,7 +1611,7 @@ query($owner: String!, $repo: String!, $number: Int!) {
         return [
           "<github_action_context>",
           "You are running as a GitHub Action. Important:",
-          "- Git push and PR creation are handled AUTOMATICALLY by the opencode infrastructure after your response",
+          "- Git push and PR creation are handled AUTOMATICALLY by the hdp infrastructure after your response",
           "- Do NOT include warnings or disclaimers about GitHub tokens, workflow permissions, or PR creation capabilities",
           "- Do NOT suggest manual steps for creating PRs or pushing code - this happens automatically",
           "- Focus only on the code changes and your analysis/response",

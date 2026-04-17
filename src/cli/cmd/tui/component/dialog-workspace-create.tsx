@@ -1,4 +1,4 @@
-import { createOpencodeClient } from "@opencode-ai/sdk/v2"
+import { createHDPClient } from "@hdp/sdk/v2"
 import { useDialog } from "@tui/ui/dialog"
 import { DialogSelect } from "@tui/ui/dialog-select"
 import { useRoute } from "@tui/context/route"
@@ -10,7 +10,7 @@ import { useSDK } from "../context/sdk"
 import { useToast } from "../ui/toast"
 
 function scoped(sdk: ReturnType<typeof useSDK>, sync: ReturnType<typeof useSync>, workspaceID: string) {
-  return createOpencodeClient({
+  return createHDPClient({
     baseUrl: sdk.url,
     fetch: sdk.fetch,
     directory: sync.path.directory || sdk.directory,

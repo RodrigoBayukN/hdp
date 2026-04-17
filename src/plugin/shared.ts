@@ -191,16 +191,16 @@ export async function resolvePathPluginTarget(spec: string) {
   throw new Error(`Plugin directory ${file} is missing package.json or index file`)
 }
 
-export async function checkPluginCompatibility(target: string, opencodeVersion: string, pkg?: PluginPackage) {
-  if (!semver.valid(opencodeVersion) || semver.major(opencodeVersion) === 0) return
+export async function checkPluginCompatibility(target: string, hdpVersion: string, pkg?: PluginPackage) {
+  if (!semver.valid(hdpVersion) || semver.major(hdpVersion) === 0) return
   const hit = pkg ?? (await readPluginPackage(target).catch(() => undefined))
   if (!hit) return
   const engines = hit.json.engines
   if (!isRecord(engines)) return
-  const range = engines.opencode
+  const range = engines.hdp
   if (typeof range !== "string") return
-  if (!semver.satisfies(opencodeVersion, range)) {
-    throw new Error(`Plugin requires opencode ${range} but running ${opencodeVersion}`)
+  if (!semver.satisfies(hdpVersion, range)) {
+    throw new Error(`Plugin requires hdp ${range} but running ${hdpVersion}`)
   }
 }
 
@@ -236,26 +236,26 @@ export async function createPluginEntry(spec: string, target: string, kind: Plug
 }
 
 export function readPackageThemes(spec: string, pkg: PluginPackage) {
-  const field = pkg.json["oc-themes"]
+  const field = pkg.json["hdp-themes"]
   if (field === undefined) return []
   if (!Array.isArray(field)) {
-    throw new TypeError(`Plugin ${spec} has invalid oc-themes field`)
+    throw new TypeError(`Plugin ${spec} has invalid hdp-themes field`)
   }
 
   const list = field.map((item) => {
     if (typeof item !== "string") {
-      throw new TypeError(`Plugin ${spec} has invalid oc-themes entry`)
+      throw new TypeError(`Plugin ${spec} has invalid hdp-themes entry`)
     }
 
     const raw = item.trim()
     if (!raw) {
-      throw new TypeError(`Plugin ${spec} has empty oc-themes entry`)
+      throw new TypeError(`Plugin ${spec} has an empty hdp-themes entry`)
     }
     if (raw.startsWith("file://") || isAbsolutePath(raw)) {
-      throw new TypeError(`Plugin ${spec} oc-themes entry must be relative: ${item}`)
+      throw new TypeError(`Plugin ${spec} hdp-themes entry must be relative: ${item}`)
     }
 
-    return resolvePackageFile(spec, raw, "oc-themes", pkg)
+    return resolvePackageFile(spec, raw, "hdp-themes", pkg)
   })
 
   return Array.from(new Set(list))

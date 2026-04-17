@@ -93,15 +93,15 @@ export const PrCommand = cmd({
               )
             }
 
-            // Check for opencode session link in PR body
+            // Check for hdp session link in PR body
             if (prInfo && prInfo.body) {
               const sessionMatch = prInfo.body.match(/https:\/\/opncd\.ai\/s\/([a-zA-Z0-9_-]+)/)
               if (sessionMatch) {
                 const sessionUrl = sessionMatch[0]
-                UI.println(`Found opencode session: ${sessionUrl}`)
+                UI.println(`Found hdp session: ${sessionUrl}`)
                 UI.println(`Importing session...`)
 
-                const importResult = await Process.text(["opencode", "import", sessionUrl], {
+                const importResult = await Process.text(["hdp", "import", sessionUrl], {
                   nothrow: true,
                 })
                 if (importResult.code === 0) {
@@ -120,18 +120,18 @@ export const PrCommand = cmd({
 
         UI.println(`Successfully checked out PR #${prNumber} as branch '${localBranchName}'`)
         UI.println()
-        UI.println("Starting opencode...")
+        UI.println("Starting hdp...")
         UI.println()
 
-        const opencodeArgs = sessionId ? ["-s", sessionId] : []
-        const opencodeProcess = Process.spawn(["opencode", ...opencodeArgs], {
+        const hdpArgs = sessionId ? ["-s", sessionId] : []
+        const hdpProcess = Process.spawn(["hdp", ...hdpArgs], {
           stdin: "inherit",
           stdout: "inherit",
           stderr: "inherit",
           cwd: process.cwd(),
         })
-        const code = await opencodeProcess.exited
-        if (code !== 0) throw new Error(`opencode exited with code ${code}`)
+        const code = await hdpProcess.exited
+        if (code !== 0) throw new Error(`hdp exited with code ${code}`)
       },
     })
   },

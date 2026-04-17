@@ -80,9 +80,9 @@ export function ControlPlaneRoutes(): Hono {
       openAPIRouteHandler(app, {
         documentation: {
           info: {
-            title: "opencode",
+            title: "hdp",
             version: "0.0.3",
-            description: "opencode api",
+            description: "hdp api",
           },
           openapi: "3.1.1",
         },

@@ -125,7 +125,7 @@ import type { EventSource } from "./context/sdk"
 import { DialogVariant } from "./component/dialog-variant"
 
 function rendererConfig(_config: TuiConfig.Info): CliRendererConfig {
-  const mouseEnabled = !Flag.OPENCODE_DISABLE_MOUSE && (_config.mouse ?? true)
+  const mouseEnabled = !Flag.HDP_DISABLE_MOUSE && (_config.mouse ?? true)
 
   return {
     externalOutputMode: "passthrough",
@@ -303,7 +303,7 @@ function App(props: { onSnapshot?: () => Promise<string[]> }) {
     })
 
   useKeyboard((evt) => {
-    if (!Flag.OPENCODE_EXPERIMENTAL_DISABLE_COPY_ON_SELECT) return
+    if (!Flag.HDP_EXPERIMENTAL_DISABLE_COPY_ON_SELECT) return
     const sel = renderer.getSelection()
     if (!sel) return
 
@@ -349,7 +349,7 @@ function App(props: { onSnapshot?: () => Promise<string[]> }) {
   }
   const [terminalTitleEnabled, setTerminalTitleEnabled] = createSignal(kv.get("terminal_title_enabled", true))  // Update terminal window title
   createEffect(() => {
-    if (!terminalTitleEnabled() || Flag.OPENCODE_DISABLE_TERMINAL_TITLE) return
+    if (!terminalTitleEnabled() || Flag.HDP_DISABLE_TERMINAL_TITLE) return
     renderer.setTerminalTitle("HDP | Helper for Developer of Projects")
   })
 
@@ -866,7 +866,7 @@ function App(props: { onSnapshot?: () => Promise<string[]> }) {
     await DialogAlert.show(
       dialog,
       "Update Complete",
-      `Successfully updated to OpenCode v${result.data.version}. Please restart the application.`,
+      `Successfully updated to HDP v${result.data.version}. Please restart the application.`,
     )
 
     exit()
@@ -886,16 +886,16 @@ function App(props: { onSnapshot?: () => Promise<string[]> }) {
       height={dimensions().height}
       backgroundColor={theme.background}
       onMouseDown={(evt) => {
-        if (!Flag.OPENCODE_EXPERIMENTAL_DISABLE_COPY_ON_SELECT) return
+        if (!Flag.HDP_EXPERIMENTAL_DISABLE_COPY_ON_SELECT) return
         if (evt.button !== MouseButton.RIGHT) return
 
         if (!Selection.copy(renderer, toast)) return
         evt.preventDefault()
         evt.stopPropagation()
       }}
-      onMouseUp={Flag.OPENCODE_EXPERIMENTAL_DISABLE_COPY_ON_SELECT ? undefined : () => Selection.copy(renderer, toast)}
+      onMouseUp={Flag.HDP_EXPERIMENTAL_DISABLE_COPY_ON_SELECT ? undefined : () => Selection.copy(renderer, toast)}
     >
-      <Show when={Flag.OPENCODE_SHOW_TTFD}>
+      <Show when={Flag.HDP_SHOW_TTFD}>
         <TimeToFirstDraw />
       </Show>
       <Show when={ready()}>

@@ -7,7 +7,7 @@ import z from "zod"
 import { mergeDeep, pipe, unique } from "remeda"
 import { Global } from "../global"
 import fsNode from "fs/promises"
-import { NamedError } from "@opencode-ai/util/error"
+import { NamedError } from "@hdp/util/error"
 import { Flag } from "../flag/flag"
 import { Auth } from "../auth"
 import { Env } from "../env"
@@ -63,23 +63,23 @@ export namespace Config {
   function systemManagedConfigDir(): string {
     switch (process.platform) {
       case "darwin":
-        return "/Library/Application Support/opencode"
+        return "/Library/Application Support/hdp"
       case "win32":
-        return path.join(process.env.ProgramData || "C:\\ProgramData", "opencode")
+        return path.join(process.env.ProgramData || "C:\\ProgramData", "hdp")
       default:
-        return "/etc/opencode"
+        return "/etc/hdp"
     }
   }
 
   export function managedConfigDir() {
-    return process.env.OPENCODE_TEST_MANAGED_CONFIG_DIR || systemManagedConfigDir()
+    return process.env.HDP_TEST_MANAGED_CONFIG_DIR || systemManagedConfigDir()
   }
 
   const managedDir = managedConfigDir()
 
-  const MANAGED_PLIST_DOMAIN = "ai.opencode.managed"
+  const MANAGED_PLIST_DOMAIN = "ai.hdp.managed"
 
-  // Keys injected by macOS/MDM into the managed plist that are not OpenCode config
+  // Keys injected by macOS/MDM into the managed plist that are not HDP config
   const PLIST_META = new Set([
     "PayloadDisplayName",
     "PayloadIdentifier",
@@ -90,7 +90,7 @@ export namespace Config {
   ])
 
   /**
-   * Parse raw JSON (from plutil conversion of a managed plist) into OpenCode config.
+   * Parse raw JSON (from plutil conversion of a managed plist) into HDP config.
    * Strips MDM metadata keys before parsing through the config schema.
    * Pure function — no OS interaction, safe to unit test directly.
    */
@@ -165,7 +165,7 @@ export namespace Config {
     }))
     json.dependencies = {
       ...json.dependencies,
-      "@opencode-ai/plugin": target,
+      "@hdp/plugin": target,
     }
     await Filesystem.writeJson(pkg, json)
 
@@ -222,7 +222,7 @@ export namespace Config {
       })
       if (!md) continue
 
-      const patterns = ["/.opencode/command/", "/.opencode/commands/", "/command/", "/commands/"]
+      const patterns = ["/.hdp/command/", "/.hdp/commands/", "/command/", "/commands/"]
       const file = rel(item, patterns) ?? path.basename(item)
       const name = trim(file)
 
@@ -261,7 +261,7 @@ export namespace Config {
       })
       if (!md) continue
 
-      const patterns = ["/.opencode/agent/", "/.opencode/agents/", "/agent/", "/agents/"]
+      const patterns = ["/.hdp/agent/", "/.hdp/agents/", "/agent/", "/agents/"]
       const file = rel(item, patterns) ?? path.basename(item)
       const agentName = trim(file)
 
@@ -777,7 +777,7 @@ export namespace Config {
       port: z.number().int().positive().optional().describe("Port to listen on"),
       hostname: z.string().optional().describe("Hostname to listen on"),
       mdns: z.boolean().optional().describe("Enable mDNS service discovery"),
-      mdnsDomain: z.string().optional().describe("Custom domain name for mDNS service (default: opencode.local)"),
+      mdnsDomain: z.string().optional().describe("Custom domain name for mDNS service (default: hdp.local)"),
       cors: z.array(z.string()).optional().describe("Additional domains to allow for CORS"),
     })
     .strict()
@@ -911,11 +911,11 @@ export namespace Config {
     .object({
       $schema: z.string().optional().describe("JSON schema reference for configuration validation"),
       logLevel: Log.Level.optional().describe("Log level"),
-      server: Server.optional().describe("Server configuration for opencode serve and web commands"),
+      server: Server.optional().describe("Server configuration for hdp serve and web commands"),
       command: z
         .record(z.string(), Command)
         .optional()
-        .describe("Command configuration, see https://opencode.ai/docs/commands"),
+        .describe("Command configuration, see https://hdp.ai/docs/commands"),
       skills: Skills.optional().describe("Additional skill folder paths"),
       watcher: z
         .object({
@@ -987,7 +987,7 @@ export namespace Config {
         })
         .catchall(Agent)
         .optional()
-        .describe("Agent configuration, see https://opencode.ai/docs/agents"),
+        .describe("Agent configuration, see https://hdp.ai/docs/agents"),
       provider: z
         .record(z.string(), Provider)
         .optional()
@@ -1298,7 +1298,7 @@ export namespace Config {
                 .then(async (mod) => {
                   const { provider, model, ...rest } = mod.default
                   if (provider && model) result.model = `${provider}/${model}`
-                  result["$schema"] = "https://opencode.ai/config.json"
+                  result["$schema"] = "https://hdp.ai/config.json"
                   result = mergeDeep(result, rest)
                   await fsNode.writeFile(path.join(Global.Path.config, "config.json"), JSON.stringify(result, null, 2))
                   await fsNode.unlink(legacy)
@@ -1362,8 +1362,8 @@ export namespace Config {
             if (value.type === "wellknown") {
               const url = key.replace(/\/+$/, "")
               process.env[value.key] = value.token
-              log.debug("fetching remote config", { url: `${url}/.well-known/opencode` })
-              const response = yield* Effect.promise(() => fetch(`${url}/.well-known/opencode`))
+              log.debug("fetching remote config", { url: `${url}/.well-known/hdp` })
+              const response = yield* Effect.promise(() => fetch(`${url}/.well-known/hdp`))
               if (!response.ok) {
                 throw new Error(`failed to fetch remote config from ${url}: ${response.status}`)
               }
@@ -1402,8 +1402,8 @@ export namespace Config {
 
           const directories = yield* Effect.promise(() => ConfigPaths.directories(ctx.directory, ctx.worktree))
 
-          if (Flag.OPENCODE_CONFIG_DIR) {
-            log.debug("loading config from OPENCODE_CONFIG_DIR", { path: Flag.OPENCODE_CONFIG_DIR })
+          if (Flag.HDP_CONFIG_DIR) {
+            log.debug("loading config from HDP_CONFIG_DIR", { path: Flag.HDP_CONFIG_DIR })
           }
 
           const deps: Promise<void>[] = []

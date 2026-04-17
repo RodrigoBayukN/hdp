@@ -1,5 +1,5 @@
-import type { Hooks, PluginInput } from "@opencode-ai/plugin"
-import type { Model } from "@opencode-ai/sdk/v2"
+import type { Hooks, PluginInput } from "@hdp/plugin"
+import type { Model } from "@hdp/sdk/v2"
 import { Installation } from "@/installation"
 import { iife } from "@/util/iife"
 import { Log } from "../../util/log"
@@ -70,7 +70,7 @@ export async function CopilotAuthPlugin(input: PluginInput): Promise<Hooks> {
           base(auth.enterpriseUrl),
           {
             Authorization: `Bearer ${auth.refresh}`,
-            "User-Agent": `opencode/${Installation.VERSION}`,
+            "User-Agent": `hdp/${Installation.VERSION}`,
           },
           provider.models,
         ).catch((error) => {
@@ -150,7 +150,7 @@ export async function CopilotAuthPlugin(input: PluginInput): Promise<Hooks> {
             const headers: Record<string, string> = {
               "x-initiator": isAgent ? "agent" : "user",
               ...(init?.headers as Record<string, string>),
-              "User-Agent": `opencode/${Installation.VERSION}`,
+              "User-Agent": `hdp/${Installation.VERSION}`,
               Authorization: `Bearer ${info.refresh}`,
               "Openai-Intent": "conversation-edits",
             }
@@ -226,7 +226,7 @@ export async function CopilotAuthPlugin(input: PluginInput): Promise<Hooks> {
               headers: {
                 Accept: "application/json",
                 "Content-Type": "application/json",
-                "User-Agent": `opencode/${Installation.VERSION}`,
+                "User-Agent": `hdp/${Installation.VERSION}`,
               },
               body: JSON.stringify({
                 client_id: CLIENT_ID,
@@ -256,7 +256,7 @@ export async function CopilotAuthPlugin(input: PluginInput): Promise<Hooks> {
                     headers: {
                       Accept: "application/json",
                       "Content-Type": "application/json",
-                      "User-Agent": `opencode/${Installation.VERSION}`,
+                      "User-Agent": `hdp/${Installation.VERSION}`,
                     },
                     body: JSON.stringify({
                       client_id: CLIENT_ID,

@@ -1,5 +1,5 @@
-import { createOpencodeClient } from "@opencode-ai/sdk/v2"
-import type { GlobalEvent, OpencodeClient } from "@opencode-ai/sdk/v2"
+import { createHDPClient } from "@hdp/sdk/v2"
+import type { GlobalEvent, HDPClient } from "@hdp/sdk/v2"
 import { createSimpleContext } from "./helper"
 import { createGlobalEmitter } from "@solid-primitives/event-bus"
 import { batch, onCleanup, onMount, createSignal, createEffect } from "solid-js"
@@ -22,7 +22,7 @@ export const { use: useSDK, provider: SDKProvider } = createSimpleContext({
     const [directory, setDirectory] = createSignal(props.directory)
 
     function createSDK(dir?: string) {
-      return createOpencodeClient({
+      return createHDPClient({
         baseUrl: props.url,
         signal: abort.signal,
         directory: dir,
@@ -31,7 +31,7 @@ export const { use: useSDK, provider: SDKProvider } = createSimpleContext({
       })
     }
 
-    const [sdk, setSDK] = createSignal<OpencodeClient>(createSDK(directory()))
+    const [sdk, setSDK] = createSignal<HDPClient>(createSDK(directory()))
 
     const emitter = createGlobalEmitter<{
       event: GlobalEvent

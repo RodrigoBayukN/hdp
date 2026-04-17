@@ -11,11 +11,11 @@
     "paths": {
       "@/*": ["./src/*"],
       "@tui/*": ["./src/cli/cmd/tui/*"],
-      "@opencode-ai/util/*": ["./lib/util/*"],
-      "@opencode-ai/plugin": ["./lib/plugin/index"],
-      "@opencode-ai/plugin/*": ["./lib/plugin/*"],
-      "@opencode-ai/sdk": ["./lib/sdk/index"],
-      "@opencode-ai/sdk/*": ["./lib/sdk/*"]
+      "@hdp/util/*": ["./lib/util/*"],
+      "@hdp/plugin": ["./lib/plugin/index"],
+      "@hdp/plugin/*": ["./lib/plugin/*"],
+      "@hdp/sdk": ["./lib/sdk/index"],
+      "@hdp/sdk/*": ["./lib/sdk/*"]
     },
     "plugins": [
       {

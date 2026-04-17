@@ -53,9 +53,9 @@ export namespace Server {
     const result = await generateSpecs(app, {
       documentation: {
         info: {
-          title: "opencode",
+          title: "hdp",
           version: "1.0.0",
-          description: "opencode api",
+          description: "hdp api",
         },
         openapi: "3.1.1",
       },
