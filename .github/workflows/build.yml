@@ -31,10 +31,19 @@ jobs:
       - name: Build standalone binary
         run: bun run build --target=${{ matrix.platform.target }}
 
+      - name: Rename binary for release
+        shell: bash
+        run: |
+          if [ "${{ matrix.platform.os }}" = "windows-latest" ]; then
+            mv dist/hdp.exe dist/hdp-${{ matrix.platform.name }}.exe
+          else
+            mv dist/hdp dist/hdp-${{ matrix.platform.name }}
+          fi
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: hdp-${{ matrix.platform.name }}
           path: |
-            dist/hdp
-            dist/hdp.exe
+            dist/hdp-*
+
