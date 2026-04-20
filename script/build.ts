@@ -55,9 +55,19 @@ console.log(`Building HDP v${version}...`);
 try {
   rmSync(dist, { recursive: true, force: true });
 } catch (e) {}
-mkdirSync(dist, { recursive: true });
+const nativeModules = [
+  "node-pty",
+  "onnxruntime-node", 
+  "sharp",
+  "tree-sitter",
+  "fsevents",
+  "@opentui/core-linux-x64",
+  "@opentui/core-linux-arm64",
+  "@opentui/core-darwin-x64",
+  "@opentui/core-darwin-arm64",
+  "@opentui/core-win32-x64"
+];
 
-const nativeModules = ["onnxruntime-node", "node-pty", "tree-sitter", "fsevents", "sharp"];
 
 // Build the worker first (referenced by src/cli/cmd/tui/thread.ts)
 const workerResult = await build({
@@ -120,6 +130,7 @@ if (!mainResult.success) {
   process.exit(1);
 }
 
+
 // Compile standalone binaries
 const isCI = process.env.GITHUB_ACTIONS === "true";
 const targetArg = process.argv.find((arg) => arg.startsWith("--target="));
@@ -134,6 +145,7 @@ const platforms = [
 
 console.log("\nCompiling binaries...");
 const externals = nativeModules.map((m) => `--external ${m}`).join(" ");
+
 
 if (targetArg) {
   const target = targetArg.split("=")[1];
