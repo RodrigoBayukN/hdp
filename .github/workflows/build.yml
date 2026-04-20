@@ -12,10 +12,10 @@ jobs:
     strategy:
       matrix:
         platform:
-          - { name: linux-x64, os: ubuntu-latest, target: bun-linux-x64, opentui: "@opentui/core-linux-x64" }
-          - { name: macos-x64, os: macos-latest, target: bun-darwin-x64, opentui: "@opentui/core-darwin-x64" }
-          - { name: macos-arm64, os: macos-latest, target: bun-darwin-arm64, opentui: "@opentui/core-darwin-arm64" }
-          - { name: windows-x64, os: windows-latest, target: bun-windows-x64, opentui: "@opentui/core-win32-x64" }
+          - { name: linux-x64, os: ubuntu-latest, target: bun-linux-x64, opentui: "@opentui/core-linux-x64", sqlitevec: "sqlite-vec-linux-x64" }
+          - { name: macos-x64, os: macos-latest, target: bun-darwin-x64, opentui: "@opentui/core-darwin-x64", sqlitevec: "sqlite-vec-darwin-x64" }
+          - { name: macos-arm64, os: macos-latest, target: bun-darwin-arm64, opentui: "@opentui/core-darwin-arm64", sqlitevec: "sqlite-vec-darwin-arm64" }
+          - { name: windows-x64, os: windows-latest, target: bun-windows-x64, opentui: "@opentui/core-win32-x64", sqlitevec: "sqlite-vec-windows-x64" }
 
     env:
       CI: true
@@ -35,7 +35,9 @@ jobs:
 
       - name: Install platform-specific native packages
         timeout-minutes: 5
-        run: bun add ${{ matrix.platform.opentui }}@0.1.97
+        run: |
+          bun add ${{ matrix.platform.opentui }}@0.1.97
+          bun add ${{ matrix.platform.sqlitevec }}@0.1.9
 
       - name: Build standalone binary
         timeout-minutes: 15

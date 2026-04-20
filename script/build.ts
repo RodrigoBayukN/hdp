@@ -81,11 +81,19 @@ const opentuiPlatformPkgs = [
   "@opentui/core-win32-x64",
 ];
 
+const sqliteVecPlatformPkgs = [
+  "sqlite-vec-linux-x64",
+  "sqlite-vec-linux-arm64",
+  "sqlite-vec-darwin-x64",
+  "sqlite-vec-darwin-arm64",
+  "sqlite-vec-windows-x64",
+];
+
 // Everything that the *bundler* should leave alone.
-const bundlerExternals = [...runtimeExternals, ...opentuiPlatformPkgs];
+const bundlerExternals = [...runtimeExternals, ...opentuiPlatformPkgs, ...sqliteVecPlatformPkgs];
 
 // Everything the *compiler* (bun build --compile) should leave alone.
-const compilerExternals = [...runtimeExternals, ...opentuiPlatformPkgs];
+const compilerExternals = [...runtimeExternals, ...opentuiPlatformPkgs, ...sqliteVecPlatformPkgs];
 
 // Build the worker first (referenced by src/cli/cmd/tui/thread.ts)
 const workerResult = await build({

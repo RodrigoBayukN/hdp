@@ -1,20 +1,26 @@
-import { pipeline, type FeatureExtractionPipeline, env } from "@huggingface/transformers"
-
-// Configure transformers to use WASM backend to avoid native library issues in the binary
-env.allowLocalModels = false;
-
-// Defensive configuration for backends
-if (env.backends && env.backends.onnx && env.backends.onnx.wasm) {
-  env.backends.onnx.wasm.numThreads = 1;
-}
-
-
-let extractor: FeatureExtractionPipeline | undefined
+let extractor: any | undefined
+let loadFailed = false
 
 async function getExtractor() {
+  if (loadFailed) throw new Error("Embedding service is not available in this environment")
   if (extractor) return extractor
-  extractor = await pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2")
-  return extractor
+
+  try {
+    // Hide the import from the bundler so it doesn't try to package onnxruntime-node
+    const transformersLib = "@huggingface/transformers";
+    const { pipeline, env } = await Function(`return import("${transformersLib}")`)();
+    
+    env.allowLocalModels = false
+    if (env.backends?.onnx?.wasm) {
+      env.backends.onnx.wasm.numThreads = 1
+    }
+    extractor = await pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2")
+    return extractor
+  } catch (e) {
+    console.error("Failed to load transformers:", e);
+    loadFailed = true
+    throw new Error("Embedding service is not available in this environment")
+  }
 }
 
 export async function getEmbedding(text: string): Promise<number[]> {
