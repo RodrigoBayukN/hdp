@@ -12,10 +12,10 @@ jobs:
     strategy:
       matrix:
         platform:
-          - { name: linux-x64, os: ubuntu-latest, target: bun-linux-x64 }
-          - { name: macos-x64, os: macos-latest, target: bun-darwin-x64 }
-          - { name: macos-arm64, os: macos-latest, target: bun-darwin-arm64 }
-          - { name: windows-x64, os: windows-latest, target: bun-windows-x64 }
+          - { name: linux-x64, os: ubuntu-latest, target: bun-linux-x64, opentui: "@opentui/core-linux-x64" }
+          - { name: macos-x64, os: macos-latest, target: bun-darwin-x64, opentui: "@opentui/core-darwin-x64" }
+          - { name: macos-arm64, os: macos-latest, target: bun-darwin-arm64, opentui: "@opentui/core-darwin-arm64" }
+          - { name: windows-x64, os: windows-latest, target: bun-windows-x64, opentui: "@opentui/core-win32-x64" }
 
     env:
       CI: true
@@ -32,6 +32,10 @@ jobs:
       - name: Install dependencies
         timeout-minutes: 10
         run: bun install --no-progress
+
+      - name: Install platform-specific native packages
+        timeout-minutes: 5
+        run: bun add ${{ matrix.platform.opentui }}@0.1.97
 
       - name: Build standalone binary
         timeout-minutes: 15
