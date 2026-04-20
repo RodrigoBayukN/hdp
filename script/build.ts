@@ -47,27 +47,45 @@ function getMigrations() {
 const migrations = getMigrations();
 console.log(`Found ${migrations.length} migrations to bundle.`);
 
-
-
 console.log(`Building HDP v${version}...`);
 
-// Clean dist
+// Clean and recreate dist
 try {
   rmSync(dist, { recursive: true, force: true });
 } catch (e) {}
-const nativeModules = [
+mkdirSync(dist, { recursive: true });
+
+// Modules that should be left as external require() calls in the final binary.
+// These are native addons that must live alongside the binary on disk.
+const runtimeExternals = [
   "node-pty",
-  "onnxruntime-node", 
-  "sharp",
   "tree-sitter",
   "fsevents",
+];
+
+// Modules that we replace with an empty stub so they vanish from the bundle.
+// They must NOT be in `external` or the alias won't take effect.
+const stubbedModules: Record<string, string> = {
+  "onnxruntime-node": join(root, "script/empty.js"),
+  "sharp": join(root, "script/empty.js"),
+};
+
+// Platform-specific optional imports from @opentui/core that get resolved
+// at runtime via a dynamic require. We mark every possible variant as
+// external so the bundler doesn't try to pull them in.
+const opentuiPlatformPkgs = [
   "@opentui/core-linux-x64",
   "@opentui/core-linux-arm64",
   "@opentui/core-darwin-x64",
   "@opentui/core-darwin-arm64",
-  "@opentui/core-win32-x64"
+  "@opentui/core-win32-x64",
 ];
 
+// Everything that the *bundler* should leave alone.
+const bundlerExternals = [...runtimeExternals, ...opentuiPlatformPkgs];
+
+// Everything the *compiler* (bun build --compile) should leave alone.
+const compilerExternals = [...runtimeExternals, ...opentuiPlatformPkgs];
 
 // Build the worker first (referenced by src/cli/cmd/tui/thread.ts)
 const workerResult = await build({
@@ -78,12 +96,12 @@ const workerResult = await build({
   conditions: ["browser"],
   minify: true,
   plugins: [solidPlugin],
-  external: nativeModules,
+  external: bundlerExternals,
+  alias: stubbedModules,
   define: {
     HDP_MIGRATIONS: JSON.stringify(migrations),
   },
 });
-
 
 if (!workerResult.success) {
   console.error("Worker build failed");
@@ -94,9 +112,8 @@ if (!workerResult.success) {
 }
 
 const workerCode = readFileSync(join(dist, "cli/cmd/tui/worker.js"), "utf-8");
-const workerDataUrl = `data:text/javascript;base64,${Buffer.from(workerCode).toString("base64")}`;
 
-// Build the main app bundle first to handle JSX and plugins
+// Build the main app bundle to handle JSX and plugins
 console.log("Bundling main application...");
 const mainResult = await build({
   entrypoints: [join(root, "src/index.ts")],
@@ -106,11 +123,10 @@ const mainResult = await build({
   conditions: ["browser"],
   minify: true,
   plugins: [solidPlugin],
-  external: nativeModules,
+  external: bundlerExternals,
   alias: {
+    ...stubbedModules,
     "@huggingface/transformers": join(root, "node_modules/@huggingface/transformers/dist/transformers.web.js"),
-    "onnxruntime-node": join(root, "script/empty.js"),
-    "sharp": join(root, "script/empty.js"),
   },
   define: {
     HDP_VERSION: JSON.stringify(version),
@@ -120,19 +136,13 @@ const mainResult = await build({
   },
 });
 
-
-
-
-
 if (!mainResult.success) {
   console.error("Main bundle failed");
   for (const message of mainResult.logs) console.error(message);
   process.exit(1);
 }
 
-
 // Compile standalone binaries
-const isCI = process.env.GITHUB_ACTIONS === "true";
 const targetArg = process.argv.find((arg) => arg.startsWith("--target="));
 
 const platforms = [
@@ -144,20 +154,21 @@ const platforms = [
 ];
 
 console.log("\nCompiling binaries...");
-const externals = nativeModules.map((m) => `--external ${m}`).join(" ");
 
+// Build the --external flags as an array so Bun's shell splits them correctly.
+const externalArgs = compilerExternals.flatMap((m) => ["--external", m]);
 
 if (targetArg) {
   const target = targetArg.split("=")[1];
   const name = target.includes("windows") ? "hdp.exe" : "hdp";
   process.stdout.write(`  Building ${target} as ${name}... `);
-  await $`bun build ${join(dist, "index.js")} --compile --target ${target} --outfile ${join(dist, name)} ${externals}`.quiet();
+  await $`bun build ${join(dist, "index.js")} --compile --target ${target} --outfile ${join(dist, name)} ${externalArgs}`.quiet();
   console.log("✅");
 } else {
   for (const { target, name } of platforms) {
     try {
       process.stdout.write(`  Building ${name}... `);
-      await $`bun build ${join(dist, "index.js")} --compile --target ${target} --outfile ${join(dist, name)} ${externals}`.quiet();
+      await $`bun build ${join(dist, "index.js")} --compile --target ${target} --outfile ${join(dist, name)} ${externalArgs}`.quiet();
       console.log("✅");
     } catch (e) {
       console.log("❌");
@@ -166,4 +177,3 @@ if (targetArg) {
 }
 
 console.log("\nBuild successful!");
-
