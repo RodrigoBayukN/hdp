@@ -93,7 +93,7 @@ const sqliteVecPlatformPkgs = [
 const bundlerExternals = [...runtimeExternals, ...opentuiPlatformPkgs, ...sqliteVecPlatformPkgs];
 
 // Everything the *compiler* (bun build --compile) should leave alone.
-const compilerExternals = [...runtimeExternals, ...opentuiPlatformPkgs, ...sqliteVecPlatformPkgs];
+const compilerExternals = [...runtimeExternals];
 
 // Build the worker first (referenced by src/cli/cmd/tui/thread.ts)
 const workerResult = await build({
