@@ -1,8 +1,7 @@
-name: Build Standalone Binaries
+name: Build and Release
 
 on:
   push:
-    branches: [ master ]
     tags: [ 'v*' ]
   workflow_dispatch:
 
@@ -21,7 +20,7 @@ jobs:
     env:
       CI: true
       TERM: xterm
-      npm_config_yes: true # Evita prompts de node-gyp y otros
+      npm_config_yes: true
 
     steps:
       - uses: actions/checkout@v4
@@ -32,12 +31,11 @@ jobs:
 
       - name: Install dependencies
         timeout-minutes: 10
-        run: bun install --frozen-lockfile --no-progress
+        run: bun install --no-progress
 
       - name: Build standalone binary
         timeout-minutes: 15
         run: bun run build --target=${{ matrix.platform.target }}
-
 
       - name: Rename binary for release
         shell: bash
@@ -52,6 +50,24 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: hdp-${{ matrix.platform.name }}
-          path: |
-            dist/hdp-*
+          path: dist/hdp-*
 
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: artifacts/**/*
