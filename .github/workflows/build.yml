@@ -18,6 +18,11 @@ jobs:
           - { name: macos-arm64, os: macos-latest, target: bun-darwin-arm64 }
           - { name: windows-x64, os: windows-latest, target: bun-windows-x64 }
 
+    env:
+      CI: true
+      TERM: xterm
+      npm_config_yes: true # Evita prompts de node-gyp y otros
+
     steps:
       - uses: actions/checkout@v4
 
@@ -26,10 +31,13 @@ jobs:
           bun-version: latest
 
       - name: Install dependencies
-        run: bun install
+        timeout-minutes: 10
+        run: bun install --frozen-lockfile --no-progress
 
       - name: Build standalone binary
+        timeout-minutes: 15
         run: bun run build --target=${{ matrix.platform.target }}
+
 
       - name: Rename binary for release
         shell: bash
