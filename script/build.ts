@@ -171,13 +171,39 @@ if (targetArg) {
   const name = target.includes("windows") ? "hdp.exe" : "hdp";
   
   process.stdout.write(`  Building ${target} as ${name}... `);
-  await $`bun build ${join(dist, "index.js")} --compile --target ${target} --outfile ${join(dist, name)} ${externalArgs}`.quiet();
+  
+  const parts = target.split('-');
+  const arch = parts[2];
+  const platform = parts[1] === "darwin" ? "darwin" : parts[1] === "windows" ? "win32" : parts[1];
+  
+  const content = await Bun.file(join(dist, "index.js")).text();
+  const patchedContent = content.replace(
+    /\`@opentui\/core-\$\{process\.platform\}-\$\{process\.arch\}\/index\.ts\`/g,
+    `"@opentui/core-${platform}-${arch}/index.ts"`
+  );
+  const tempEntry = join(dist, `index_${target}.js`);
+  await Bun.write(tempEntry, patchedContent);
+  
+  await $`bun build ${tempEntry} --compile --target ${target} --outfile ${join(dist, name)} ${externalArgs}`.quiet();
   console.log("✅");
 } else {
   for (const { target, name } of platforms) {
     try {
       process.stdout.write(`  Building ${name}... `);
-      await $`bun build ${join(dist, "index.js")} --compile --target ${target} --outfile ${join(dist, name)} ${externalArgs}`.quiet();
+      
+      const parts = target.split('-');
+      const arch = parts[2];
+      const platform = parts[1] === "darwin" ? "darwin" : parts[1] === "windows" ? "win32" : parts[1];
+      
+      const content = await Bun.file(join(dist, "index.js")).text();
+      const patchedContent = content.replace(
+        /\`@opentui\/core-\$\{process\.platform\}-\$\{process\.arch\}\/index\.ts\`/g,
+        `"@opentui/core-${platform}-${arch}/index.ts"`
+      );
+      const tempEntry = join(dist, `index_${target}.js`);
+      await Bun.write(tempEntry, patchedContent);
+      
+      await $`bun build ${tempEntry} --compile --target ${target} --outfile ${join(dist, name)} ${externalArgs}`.quiet();
       console.log("✅");
     } catch (e) {
       console.log("❌");
