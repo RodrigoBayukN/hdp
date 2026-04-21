@@ -61,7 +61,7 @@ jobs:
           if [ "${{ matrix.platform.os }}" = "windows-latest" ]; then
             cp dist/hdp.exe hdp-release/hdp.exe
             cd hdp-release
-            zip -r ../dist/hdp-${{ matrix.platform.name }}.zip *
+            powershell -Command "Compress-Archive -Path * -DestinationPath ../dist/hdp-${{ matrix.platform.name }}.zip -Force"
           else
             cp dist/hdp hdp-release/hdp
             cd hdp-release
