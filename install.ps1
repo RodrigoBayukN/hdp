@@ -8,11 +8,11 @@ $arch = if ([Environment]::Is64BitOperatingSystem) { "x64" } else {
     exit 1
 }
 
-$binaryName = "hdp-windows-x64.exe"
+$binaryName = "hdp-windows-x64.zip"
 $repo = "https://github.com/RodrigoBayukN/hdp"
 $downloadUrl = "$repo/releases/latest/download/$binaryName"
-$installDir = "$env:LOCALAPPDATA\hdp"
-$installPath = "$installDir\hdp.exe"
+$installDir = "$env:LOCALAPPDATA\hdp\bin"
+$zipPath = "$env:TEMP\hdp.zip"
 
 Write-Host "Installing HDP for Windows..." -ForegroundColor Cyan
 
@@ -21,9 +21,14 @@ if (!(Test-Path $installDir)) {
     New-Item -ItemType Directory -Path $installDir -Force | Out-Null
 }
 
-# Download binary
+# Download archive
 Write-Host "Downloading from $downloadUrl..."
-Invoke-WebRequest -Uri $downloadUrl -OutFile $installPath -UseBasicParsing
+Invoke-WebRequest -Uri $downloadUrl -OutFile $zipPath -UseBasicParsing
+
+# Extract archive
+Write-Host "Extracting files..."
+Expand-Archive -Path $zipPath -DestinationPath $installDir -Force
+Remove-Item $zipPath
 
 # Add to PATH if not already there
 $currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
@@ -34,6 +39,6 @@ if ($currentPath -notlike "*$installDir*") {
 
 Write-Host ""
 Write-Host "HDP has been installed successfully!" -ForegroundColor Green
-Write-Host "Location: $installPath"
+Write-Host "Location: $installDir"
 Write-Host ""
 Write-Host "Restart your terminal and run 'hdp --help' to get started." -ForegroundColor Cyan

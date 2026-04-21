@@ -17,30 +17,41 @@ case "$ARCH" in
   *)       echo "Error: Architecture $ARCH not supported"; exit 1 ;;
 esac
 
-BINARY_NAME="hdp-${OS}-${ARCH}"
+BINARY_NAME="hdp-${OS}-${ARCH}.tar.gz"
 REPO_URL="https://github.com/RodrigoBayukN/hdp"
 DOWNLOAD_URL="${REPO_URL}/releases/latest/download/${BINARY_NAME}"
 
 echo "Installing HDP for ${OS}-${ARCH}..."
 
-# Download binary
+INSTALL_DIR="$HOME/.hdp/bin"
+mkdir -p "$INSTALL_DIR"
+
+# Download archive
 if command -v curl >/dev/null 2>&1; then
-  curl -L -o hdp "${DOWNLOAD_URL}"
+  curl -L -o hdp.tar.gz "${DOWNLOAD_URL}"
 elif command -v wget >/dev/null 2>&1; then
-  wget -O hdp "${DOWNLOAD_URL}"
+  wget -O hdp.tar.gz "${DOWNLOAD_URL}"
 else
   echo "Error: curl or wget not found"; exit 1
 fi
 
-# Make executable
-chmod +x hdp
+# Extract into install dir
+tar -xzf hdp.tar.gz -C "$INSTALL_DIR"
+rm hdp.tar.gz
 
-# Move to bin directory
-if [ -w /usr/local/bin ]; then
-  mv hdp /usr/local/bin/hdp
+# Make executable
+chmod +x "$INSTALL_DIR/hdp"
+
+# Add to PATH if not already present
+if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
+  echo "export PATH=\"$INSTALL_DIR:\$PATH\"" >> "$HOME/.bashrc"
+  if [ -f "$HOME/.zshrc" ]; then
+    echo "export PATH=\"$INSTALL_DIR:\$PATH\"" >> "$HOME/.zshrc"
+  fi
+  echo "✅ HDP has been installed to $INSTALL_DIR"
+  echo "⚠️  Please restart your terminal or run: source ~/.bashrc (or ~/.zshrc) to update your PATH."
 else
-  sudo mv hdp /usr/local/bin/hdp
+  echo "✅ HDP has been installed successfully to $INSTALL_DIR"
 fi
 
-echo "✅ HDP has been installed successfully to /usr/local/bin/hdp"
 echo "Run 'hdp --help' to get started!"

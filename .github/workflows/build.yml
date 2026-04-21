@@ -43,13 +43,29 @@ jobs:
         timeout-minutes: 15
         run: bun run build --target=${{ matrix.platform.target }}
 
-      - name: Rename binary for release
+      - name: Package binary and native extensions
         shell: bash
         run: |
+          # Create a temporary folder for the release contents
+          mkdir -p hdp-release
+          
+          # Determine correct extension suffix
+          EXT="so"
+          if [ "${{ matrix.platform.os }}" = "windows-latest" ]; then EXT="dll"; fi
+          if [ "${{ matrix.platform.os }}" = "macos-latest" ] || [ "${{ matrix.platform.os }}" = "macos-13" ]; then EXT="dylib"; fi
+          
+          # Find and copy the downloaded vec0 native file into our release folder
+          find node_modules -name "vec0.${EXT}" -exec cp {} hdp-release/ \; || true
+          
+          # Copy and rename the compiled binary into the folder
           if [ "${{ matrix.platform.os }}" = "windows-latest" ]; then
-            mv dist/hdp.exe dist/hdp-${{ matrix.platform.name }}.exe
+            cp dist/hdp.exe hdp-release/hdp.exe
+            cd hdp-release
+            zip -r ../dist/hdp-${{ matrix.platform.name }}.zip *
           else
-            mv dist/hdp dist/hdp-${{ matrix.platform.name }}
+            cp dist/hdp hdp-release/hdp
+            cd hdp-release
+            tar -czf ../dist/hdp-${{ matrix.platform.name }}.tar.gz *
           fi
 
       - name: Upload Artifact
