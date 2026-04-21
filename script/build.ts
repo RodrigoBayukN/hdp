@@ -170,23 +170,14 @@ if (targetArg) {
   const target = targetArg.split("=")[1];
   const name = target.includes("windows") ? "hdp.exe" : "hdp";
   
-  // Extract architecture and platform from the target string (e.g. "bun-darwin-x64")
-  const parts = target.split('-');
-  const arch = parts[2];
-  const platform = parts[1] === "darwin" ? "darwin" : parts[1] === "windows" ? "win32" : parts[1];
-  
   process.stdout.write(`  Building ${target} as ${name}... `);
-  await $`bun build ${join(dist, "index.js")} --compile --target ${target} --outfile ${join(dist, name)} --define process.arch='"${arch}"' --define process.platform='"${platform}"' ${externalArgs}`.quiet();
+  await $`bun build ${join(dist, "index.js")} --compile --target ${target} --outfile ${join(dist, name)} ${externalArgs}`.quiet();
   console.log("✅");
 } else {
   for (const { target, name } of platforms) {
     try {
-      const parts = target.split('-');
-      const arch = parts[2];
-      const platform = parts[1] === "darwin" ? "darwin" : parts[1] === "windows" ? "win32" : parts[1];
-      
       process.stdout.write(`  Building ${name}... `);
-      await $`bun build ${join(dist, "index.js")} --compile --target ${target} --outfile ${join(dist, name)} --define process.arch='"${arch}"' --define process.platform='"${platform}"' ${externalArgs}`.quiet();
+      await $`bun build ${join(dist, "index.js")} --compile --target ${target} --outfile ${join(dist, name)} ${externalArgs}`.quiet();
       console.log("✅");
     } catch (e) {
       console.log("❌");

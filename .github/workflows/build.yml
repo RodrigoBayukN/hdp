@@ -36,7 +36,7 @@ jobs:
       - name: Install platform-specific native packages
         timeout-minutes: 5
         run: |
-          bun add ${{ matrix.platform.opentui }}@0.1.97
+          bun install --os="*" --cpu="*" @opentui/core@0.1.97
           bun add ${{ matrix.platform.sqlitevec }}@0.1.9
 
       - name: Build standalone binary
