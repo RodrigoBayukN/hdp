@@ -179,7 +179,7 @@ if (targetArg) {
   const content = await Bun.file(join(dist, "index.js")).text();
   const patchedContent = content.replace(
     /\`@opentui\/core-\$\{process\.platform\}-\$\{process\.arch\}\/index\.ts\`/g,
-    `"@opentui/core-${platform}-${arch}/index.ts"`
+    `'@opentui/core-${platform}-${arch}/index.ts'`
   );
   const tempEntry = join(dist, `index_${target}.js`);
   await Bun.write(tempEntry, patchedContent);
@@ -198,7 +198,7 @@ if (targetArg) {
       const content = await Bun.file(join(dist, "index.js")).text();
       const patchedContent = content.replace(
         /\`@opentui\/core-\$\{process\.platform\}-\$\{process\.arch\}\/index\.ts\`/g,
-        `"@opentui/core-${platform}-${arch}/index.ts"`
+        `'@opentui/core-${platform}-${arch}/index.ts'`
       );
       const tempEntry = join(dist, `index_${target}.js`);
       await Bun.write(tempEntry, patchedContent);
