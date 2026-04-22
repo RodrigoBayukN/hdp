@@ -105,7 +105,10 @@ const workerResult = await build({
   minify: true,
   plugins: [solidPlugin],
   external: bundlerExternals,
-  alias: stubbedModules,
+  alias: {
+    ...stubbedModules,
+    "@huggingface/transformers": join(root, "node_modules/@huggingface/transformers/dist/transformers.web.js"),
+  },
   define: {
     HDP_MIGRATIONS: JSON.stringify(migrations),
   },

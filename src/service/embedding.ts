@@ -6,9 +6,7 @@ async function getExtractor() {
   if (extractor) return extractor
 
   try {
-    // Hide the import from the bundler so it doesn't try to package onnxruntime-node
-    const transformersLib = "@huggingface/transformers";
-    const { pipeline, env } = await Function(`return import("${transformersLib}")`)();
+    const { pipeline, env } = await import("@huggingface/transformers");
     
     env.allowLocalModels = false
     if (env.backends?.onnx?.wasm) {
