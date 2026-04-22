@@ -54,6 +54,24 @@ function createEventSource(client: RpcClient): EventSource {
 
 async function target() {
   if (typeof HDP_WORKER_CODE !== "undefined") {
+    if (process.platform === "win32") {
+      const os = await import("os")
+      const path = await import("path")
+      const fs = await import("fs")
+      const crypto = await import("crypto")
+      
+      const hash = crypto.createHash("md5").update(HDP_WORKER_CODE).digest("hex")
+      const tempPath = path.join(os.tmpdir(), `hdp-worker-${hash}.js`)
+      
+      try {
+        if (!fs.existsSync(tempPath)) {
+          fs.writeFileSync(tempPath, HDP_WORKER_CODE)
+        }
+        return tempPath
+      } catch (e) {
+        // Fallback to Blob if writing fails
+      }
+    }
     const blob = new Blob([HDP_WORKER_CODE], { type: "text/javascript" })
     return URL.createObjectURL(blob)
   }

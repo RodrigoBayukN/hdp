@@ -18,11 +18,15 @@ export namespace IndexService {
       `)
 
       // Create virtual table for vectors (dim=384 for all-MiniLM-L6-v2)
-      db.run(sql`
-        CREATE VIRTUAL TABLE IF NOT EXISTS vector_index USING vec0(
-          embedding float[384]
-        )
-      `)
+      try {
+        db.run(sql`
+          CREATE VIRTUAL TABLE IF NOT EXISTS vector_index USING vec0(
+            embedding float[384]
+          )
+        `)
+      } catch (e) {
+        // Silently ignore if sqlite-vec is not available in this environment
+      }
     })
   }
 
