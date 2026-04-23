@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "version": "0.1.15",
+  "version": "0.1.17",
   "name": "hdp",
   "type": "module",
   "license": "MIT",
@@ -142,6 +142,8 @@
     "mime-types": "3.0.2",
     "minimatch": "10.0.3",
     "npm-package-arg": "13.0.2",
+    "onnxruntime-common": "^1.24.3",
+    "onnxruntime-web": "^1.24.3",
     "open": "10.1.2",
     "opencode-gitlab-auth": "2.0.1",
     "opencode-poe-auth": "0.0.1",

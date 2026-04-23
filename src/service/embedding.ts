@@ -1,3 +1,5 @@
+import { pipeline, env } from "@huggingface/transformers";
+
 let extractor: any | undefined
 let loadFailed = false
 
@@ -6,8 +8,6 @@ async function getExtractor() {
   if (extractor) return extractor
 
   try {
-    const { pipeline, env } = await import("@huggingface/transformers");
-    
     env.allowLocalModels = false
     if (env.backends?.onnx?.wasm) {
       env.backends.onnx.wasm.numThreads = 1

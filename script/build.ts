@@ -103,12 +103,22 @@ const workerResult = await build({
   naming: "[name].js",
   conditions: ["browser"],
   minify: true,
-  plugins: [solidPlugin],
+  plugins: [
+    solidPlugin,
+    {
+      name: "transformers-stub",
+      setup(b) {
+        b.onResolve({ filter: /^@huggingface\/transformers$/ }, () => {
+          return { path: join(root, "node_modules/@huggingface/transformers/dist/transformers.web.js") };
+        });
+        b.onResolve({ filter: /^onnxruntime-node$/ }, () => {
+          return { path: join(root, "script/empty.js") };
+        });
+      },
+    }
+  ],
   external: bundlerExternals,
-  alias: {
-    ...stubbedModules,
-    "@huggingface/transformers": join(root, "node_modules/@huggingface/transformers/dist/transformers.web.js"),
-  },
+  alias: stubbedModules,
   define: {
     HDP_MIGRATIONS: JSON.stringify(migrations),
   },
@@ -133,12 +143,22 @@ const mainResult = await build({
   naming: "index.js",
   conditions: ["browser"],
   minify: true,
-  plugins: [solidPlugin],
+  plugins: [
+    solidPlugin,
+    {
+      name: "transformers-stub",
+      setup(b) {
+        b.onResolve({ filter: /^@huggingface\/transformers$/ }, () => {
+          return { path: join(root, "node_modules/@huggingface/transformers/dist/transformers.web.js") };
+        });
+        b.onResolve({ filter: /^onnxruntime-node$/ }, () => {
+          return { path: join(root, "script/empty.js") };
+        });
+      },
+    }
+  ],
   external: bundlerExternals,
-  alias: {
-    ...stubbedModules,
-    "@huggingface/transformers": join(root, "node_modules/@huggingface/transformers/dist/transformers.web.js"),
-  },
+  alias: stubbedModules,
   define: {
     HDP_VERSION: JSON.stringify(version),
     HDP_CHANNEL: JSON.stringify("latest"),
