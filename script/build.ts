@@ -122,6 +122,7 @@ const workerResult = await build({
   define: {
     HDP_MIGRATIONS: JSON.stringify(migrations),
   },
+  banner: "Object.defineProperty(process, 'release', { value: { name: 'browser' }, writable: true, configurable: true });\n",
 });
 
 if (!workerResult.success) {
