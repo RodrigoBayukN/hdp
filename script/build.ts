@@ -122,7 +122,7 @@ const workerResult = await build({
   define: {
     HDP_MIGRATIONS: JSON.stringify(migrations),
   },
-  banner: "Object.defineProperty(process, 'release', { value: { name: 'browser' }, writable: true, configurable: true });\n",
+  banner: "Object.defineProperty(process, 'release', { value: { name: 'browser' }, writable: true, configurable: true }); if (process.versions) { Object.defineProperty(process.versions, 'node', { value: undefined, writable: true, configurable: true }); }\n",
 });
 
 if (!workerResult.success) {
