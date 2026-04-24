@@ -115,14 +115,35 @@ const workerResult = await build({
           return { path: join(root, "script/empty.js") };
         });
       },
-    }
+    },
+    {
+      name: "env-cleaner",
+      setup(build: any) {
+        const fs = require("fs");
+        build.onLoad({ filter: /\.(js|mjs)$/ }, async (args: any) => {
+          if (!args.path.includes("node_modules")) return undefined;
+          try {
+            let contents = fs.readFileSync(args.path, "utf8");
+            if (contents.includes("process?.")) {
+              contents = contents.replace(/process\?\.versions\?\.node/g, "undefined");
+              contents = contents.replace(/process\?\.release\?\.name/g, '"browser"');
+              return { contents, loader: "js" };
+            }
+          } catch (e) {}
+          return undefined;
+        });
+      },
+    },
   ],
   external: bundlerExternals,
-  alias: stubbedModules,
   define: {
     HDP_MIGRATIONS: JSON.stringify(migrations),
+    "process.versions.node": "undefined",
+    "globalThis.process.versions.node": "undefined",
+    "process.release.name": '"browser"',
+    "globalThis.process.release.name": '"browser"',
   },
-  banner: "Object.defineProperty(process, 'release', { value: { name: 'browser' }, writable: true, configurable: true }); if (process.versions) { Object.defineProperty(process.versions, 'node', { value: undefined, writable: true, configurable: true }); }\n",
+  banner: "var process = { versions: { node: undefined }, release: { name: 'browser' }, env: {} };\n",
 });
 
 if (!workerResult.success) {
