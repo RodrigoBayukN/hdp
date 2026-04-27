@@ -163,6 +163,7 @@ const mainResult = await build({
   outdir: dist,
   target: "bun",
   naming: "index.js",
+  conditions: ["browser"],
   minify: true,
   plugins: [
     solidPlugin,
@@ -179,6 +180,7 @@ const mainResult = await build({
     }
   ],
   external: bundlerExternals,
+  alias: stubbedModules,
   define: {
     HDP_VERSION: JSON.stringify(version),
     HDP_CHANNEL: JSON.stringify("latest"),
