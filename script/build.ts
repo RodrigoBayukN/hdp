@@ -124,11 +124,28 @@ const workerResult = await build({
           if (!args.path.includes("node_modules")) return undefined;
           try {
             let contents = fs.readFileSync(args.path, "utf8");
-            if (contents.includes("process?.")) {
+            let changed = false;
+            if (contents.includes("process?.versions?.node")) {
               contents = contents.replace(/process\?\.versions\?\.node/g, "undefined");
-              contents = contents.replace(/process\?\.release\?\.name/g, '"browser"');
-              return { contents, loader: "js" };
+              changed = true;
             }
+            if (contents.includes("process?.release?.name")) {
+              contents = contents.replace(/process\?\.release\?\.name/g, '"browser"');
+              changed = true;
+            }
+            if (contents.includes('typeof process.versions.node')) {
+              contents = contents.replace(/typeof process\.versions\.node\s*===?\s*"string"/g, "false");
+              contents = contents.replace(/typeof process\.versions\.node\s*===?\s*'string'/g, "false");
+              changed = true;
+            }
+            if (contents.includes('ENVIRONMENT_IS_NODE')) {
+              contents = contents.replace(
+                /ENVIRONMENT_IS_NODE\s*=\s*typeof process\s*==\s*"object"\s*&&\s*typeof process\.versions\s*==\s*"object"\s*&&\s*typeof process\.versions\.node\s*==\s*"string"/g,
+                "ENVIRONMENT_IS_NODE=false"
+              );
+              changed = true;
+            }
+            if (changed) return { contents, loader: "js" };
           } catch (e) {}
           return undefined;
         });

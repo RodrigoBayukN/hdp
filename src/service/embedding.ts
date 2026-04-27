@@ -9,10 +9,14 @@ async function getExtractor() {
 
   try {
     env.allowLocalModels = false
-    if (env.backends?.onnx?.wasm) {
+    if (env.backends?.onnx) {
+      env.backends.onnx.wasm = env.backends.onnx.wasm || {}
       env.backends.onnx.wasm.numThreads = 1
+      env.backends.onnx.wasm.simd = true
     }
-    extractor = await pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2")
+    extractor = await pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2", {
+      device: "wasm",
+    })
     return extractor
   } catch (e) {
     console.error("Failed to load transformers:", e);
