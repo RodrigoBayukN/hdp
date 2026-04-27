@@ -157,6 +157,14 @@ const workerResult = await build({
   define: {
     HDP_MIGRATIONS: JSON.stringify(migrations),
   },
+  banner: [
+    "if(typeof process!=='undefined'&&process.versions){",
+    "Object.defineProperty(process.versions,'node',{value:undefined,writable:true,configurable:true});",
+    "}",
+    "if(typeof process!=='undefined'&&process.release){",
+    "Object.defineProperty(process.release,'name',{value:'browser',writable:true,configurable:true});",
+    "}",
+  ].join(""),
 });
 
 if (!workerResult.success) {
