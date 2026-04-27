@@ -136,14 +136,10 @@ const workerResult = await build({
     },
   ],
   external: bundlerExternals,
+  alias: stubbedModules,
   define: {
     HDP_MIGRATIONS: JSON.stringify(migrations),
-    "process.versions.node": "undefined",
-    "globalThis.process.versions.node": "undefined",
-    "process.release.name": '"browser"',
-    "globalThis.process.release.name": '"browser"',
   },
-  banner: "var process = { versions: { node: undefined }, release: { name: 'browser' }, env: {} };\n",
 });
 
 if (!workerResult.success) {
