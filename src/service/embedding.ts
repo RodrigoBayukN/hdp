@@ -16,9 +16,21 @@ async function getExtractor() {
       env.backends.onnx.wasm.simd = true
       env.backends.onnx.wasm.wasmPaths = undefined as any
     }
-    extractor = await pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2", {
-      device: "wasm",
-    })
+
+    const _err = console.error
+    console.error = (...args: any[]) => {
+      const msg = String(args[0] ?? "")
+      if (msg.includes("ort-wasm") || msg.includes("onnxruntime") || msg.includes("wasm")) return
+      _err(...args)
+    }
+    try {
+      extractor = await pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2", {
+        device: "wasm",
+      })
+    } finally {
+      console.error = _err
+    }
+
     return extractor
   } catch (e) {
     console.error("Failed to load transformers:", e);
