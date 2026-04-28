@@ -35,9 +35,11 @@ process.on("uncaughtException", (e) => {
   })
 })
 
+export const client = Rpc.create<typeof import("./thread").threadRpc, typeof rpc>(globalThis, rpc)
+
 // Subscribe to global events and forward them via RPC
 GlobalBus.on("event", (event) => {
-  Rpc.emit("global.event", event)
+  client.emit("global.event", event)
 })
 
 let server: Awaited<ReturnType<typeof Server.listen>> | undefined
@@ -90,8 +92,6 @@ export const rpc = {
     if (server) await server.stop(true)
   },
 }
-
-Rpc.listen(rpc)
 
 function getAuthorizationHeader(): string | undefined {
   const password = Flag.HDP_SERVER_PASSWORD

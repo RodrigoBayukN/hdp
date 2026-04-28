@@ -38,7 +38,7 @@ import { errorMessage } from "./util/error"
 import { PluginCommand } from "./cli/cmd/plug"
 import { Heap } from "./cli/heap"
 import { drizzle } from "drizzle-orm/bun-sqlite"
-import { IndexService } from "./service/index"
+import { IndexServiceInit } from "./service/index_init"
 
 process.on("unhandledRejection", (e) => {
   Log.Default.error("rejection", {
@@ -111,7 +111,7 @@ const cli = yargs(args)
       args: process.argv.slice(2),
     })
 
-    await IndexService.init()
+    await IndexServiceInit.init()
 
     const marker = path.join(Global.Path.data, "hdp.db")
     if (!(await Filesystem.exists(marker))) {

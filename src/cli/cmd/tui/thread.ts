@@ -17,12 +17,19 @@ import { TuiConfig } from "@/config/tui"
 import { Instance } from "@/project/instance"
 import { Config } from "@/config/config"
 import { writeHeapSnapshot } from "v8"
+import { getEmbedding } from "@/service/embedding_impl"
+
+export const threadRpc = {
+  async getEmbedding(text: string) {
+    return await getEmbedding(text)
+  }
+}
 
 declare global {
   const HDP_WORKER_CODE: string
 }
 
-type RpcClient = ReturnType<typeof Rpc.client<typeof rpc>>
+type RpcClient = ReturnType<typeof Rpc.create<typeof rpc, typeof threadRpc>>
 
 function createWorkerFetch(client: RpcClient): typeof fetch {
   const fn = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
@@ -178,8 +185,7 @@ export const TuiThreadCommand = cmd({
           error: e.error,
         })
       }
-
-      const client = Rpc.client<typeof rpc>(worker)
+      const client = Rpc.create<typeof rpc, typeof threadRpc>(worker, threadRpc)
       const error = (e: unknown) => {
         Log.Default.error("process error", { error: errorMessage(e) })
       }
