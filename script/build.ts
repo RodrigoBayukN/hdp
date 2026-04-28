@@ -159,10 +159,11 @@ const workerResult = await build({
   },
   banner: [
     "if(typeof process!=='undefined'&&process.versions){",
-    "Object.defineProperty(process.versions,'node',{value:undefined,writable:true,configurable:true});",
+    "try{Object.defineProperty(process.versions,'node',{value:undefined,writable:true,configurable:true})}",
+    "catch(e){",
+    "var _ov=process.versions;",
+    "process.versions=new Proxy(_ov,{get:function(t,p){return p==='node'?undefined:t[p]}});",
     "}",
-    "if(typeof process!=='undefined'&&process.release){",
-    "Object.defineProperty(process.release,'name',{value:'browser',writable:true,configurable:true});",
     "}",
   ].join(""),
 });

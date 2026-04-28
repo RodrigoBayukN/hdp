@@ -9,10 +9,12 @@ async function getExtractor() {
 
   try {
     env.allowLocalModels = false
+    env.useWasmCache = false
     if (env.backends?.onnx) {
       env.backends.onnx.wasm = env.backends.onnx.wasm || {}
       env.backends.onnx.wasm.numThreads = 1
       env.backends.onnx.wasm.simd = true
+      env.backends.onnx.wasm.wasmPaths = undefined as any
     }
     extractor = await pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2", {
       device: "wasm",
