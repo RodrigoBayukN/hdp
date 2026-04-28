@@ -61,6 +61,7 @@ const runtimeExternals = [
   "node-pty",
   "tree-sitter",
   "fsevents",
+  "onnxruntime-node",
 ];
 
 // Modules that we replace with an empty stub so they vanish from the bundle.
@@ -113,12 +114,67 @@ const workerResult = await build({
         }
       },
     },
+    {
+      name: "env-cleaner",
+      setup(build: any) {
+        const fs = require("fs");
+        build.onLoad({ filter: /\.(js|mjs)$/ }, async (args: any) => {
+          if (!args.path.includes("node_modules")) return undefined;
+          try {
+            let contents = fs.readFileSync(args.path, "utf8");
+            let changed = false;
+            if (contents.includes("process?.versions?.node")) {
+              contents = contents.replace(/process\?\.versions\?\.node/g, "undefined");
+              changed = true;
+            }
+            if (contents.includes("process?.release?.name")) {
+              contents = contents.replace(/process\?\.release\?\.name/g, '"browser"');
+              changed = true;
+            }
+            if (contents.includes('typeof process.versions.node')) {
+              contents = contents.replace(/typeof process\.versions\.node\s*===?\s*"string"/g, "false");
+              contents = contents.replace(/typeof process\.versions\.node\s*===?\s*'string'/g, "false");
+              changed = true;
+            }
+            if (contents.includes('ENVIRONMENT_IS_NODE')) {
+              contents = contents.replace(
+                /ENVIRONMENT_IS_NODE\s*=\s*typeof process\s*==\s*"object"\s*&&\s*typeof process\.versions\s*==\s*"object"\s*&&\s*typeof process\.versions\.node\s*==\s*"string"/g,
+                "ENVIRONMENT_IS_NODE=false"
+              );
+              changed = true;
+            }
+            if (changed) return { contents, loader: "js" };
+          } catch (e) {}
+          return undefined;
+        });
+      },
+    },
+    {
+      name: "transformers-stub",
+      setup(b) {
+        b.onResolve({ filter: /^@huggingface\/transformers$/ }, () => {
+          return { path: join(root, "node_modules/@huggingface/transformers/dist/transformers.web.js") };
+        });
+        b.onResolve({ filter: /^onnxruntime-node$/ }, () => {
+          return { path: join(root, "script/empty.js") };
+        });
+      },
+    }
   ],
   external: bundlerExternals,
   alias: stubbedModules,
   define: {
     HDP_MIGRATIONS: JSON.stringify(migrations),
   },
+  banner: [
+    "if(typeof process!=='undefined'&&process.versions){",
+    "try{Object.defineProperty(process.versions,'node',{value:undefined,writable:true,configurable:true})}",
+    "catch(e){",
+    "var _ov=process.versions;",
+    "process.versions=new Proxy(_ov,{get:function(t,p){return p==='node'?undefined:t[p]}});",
+    "}",
+    "}",
+  ].join(""),
 });
 
 if (!workerResult.success) {
@@ -130,6 +186,82 @@ if (!workerResult.success) {
 }
 
 const workerCode = readFileSync(join(dist, "cli/cmd/tui/worker.js"), "utf-8");
+
+const workerEmbeddingResult = await build({
+  entrypoints: [join(root, "src/service/worker_embedding.ts")],
+  outdir: join(dist, "service"),
+  target: "bun",
+  naming: "worker_embedding.js",
+  conditions: ["browser"],
+  minify: true,
+  plugins: [
+    {
+      name: "env-cleaner",
+      setup(build: any) {
+        const fs = require("fs");
+        build.onLoad({ filter: /\.(js|mjs)$/ }, async (args: any) => {
+          if (!args.path.includes("node_modules")) return undefined;
+          try {
+            let contents = fs.readFileSync(args.path, "utf8");
+            let changed = false;
+            if (contents.includes("process?.versions?.node")) {
+              contents = contents.replace(/process\?\.versions\?\.node/g, "undefined");
+              changed = true;
+            }
+            if (contents.includes("process?.release?.name")) {
+              contents = contents.replace(/process\?\.release\?\.name/g, '"browser"');
+              changed = true;
+            }
+            if (contents.includes('typeof process.versions.node')) {
+              contents = contents.replace(/typeof process\.versions\.node\s*===?\s*"string"/g, "false");
+              contents = contents.replace(/typeof process\.versions\.node\s*===?\s*'string'/g, "false");
+              changed = true;
+            }
+            if (contents.includes('ENVIRONMENT_IS_NODE')) {
+              contents = contents.replace(
+                /ENVIRONMENT_IS_NODE\s*=\s*typeof process\s*==\s*"object"\s*&&\s*typeof process\.versions\s*==\s*"object"\s*&&\s*typeof process\.versions\.node\s*==\s*"string"/g,
+                "ENVIRONMENT_IS_NODE=false"
+              );
+              changed = true;
+            }
+            if (changed) return { contents, loader: "js" };
+          } catch (e) {}
+          return undefined;
+        });
+      },
+    },
+    {
+      name: "transformers-stub",
+      setup(b) {
+        b.onResolve({ filter: /^@huggingface\/transformers$/ }, () => {
+          return { path: join(root, "node_modules/@huggingface/transformers/dist/transformers.web.js") };
+        });
+        b.onResolve({ filter: /^onnxruntime-node$/ }, () => {
+          return { path: join(root, "script/empty.js") };
+        });
+      },
+    }
+  ],
+  banner: [
+    "if(typeof process!=='undefined'&&process.versions){",
+    "try{Object.defineProperty(process.versions,'node',{value:undefined,writable:true,configurable:true})}",
+    "catch(e){",
+    "var _ov=process.versions;",
+    "process.versions=new Proxy(_ov,{get:function(t,p){return p==='node'?undefined:t[p]}});",
+    "}",
+    "}",
+  ].join(""),
+});
+
+if (!workerEmbeddingResult.success) {
+  console.error("Worker Embedding build failed");
+  for (const message of workerEmbeddingResult.logs) {
+    console.error(message);
+  }
+  process.exit(1);
+}
+
+const workerEmbeddingCode = readFileSync(join(dist, "service/worker_embedding.js"), "utf-8");
 
 // Build the main app bundle to handle JSX and plugins
 console.log("Bundling main application...");
@@ -149,6 +281,7 @@ const mainResult = await build({
     HDP_CHANNEL: JSON.stringify("latest"),
     HDP_MIGRATIONS: JSON.stringify(migrations),
     HDP_WORKER_CODE: JSON.stringify(workerCode),
+    HDP_WORKER_EMBEDDING_CODE: JSON.stringify(workerEmbeddingCode),
   },
 });
 

@@ -3,42 +3,37 @@ export namespace Rpc {
     [method: string]: (input: any) => any
   }
 
-  export function create<TClient extends Definition = any, TServer extends Definition = any>(
-    target: {
-      postMessage: (data: string) => void | null
-      onmessage?: ((ev: MessageEvent<any>) => any) | null
-      addEventListener?: (type: "message", listener: (ev: MessageEvent<any>) => any) => void
-    },
-    rpc?: TServer
-  ) {
+  export function listen(rpc: Definition) {
+    onmessage = async (evt) => {
+      const parsed = JSON.parse(evt.data)
+      if (parsed.type === "rpc.request") {
+        const result = await rpc[parsed.method](parsed.input)
+        postMessage(JSON.stringify({ type: "rpc.result", result, id: parsed.id }))
+      }
+    }
+  }
+
+  export function emit(event: string, data: unknown) {
+    postMessage(JSON.stringify({ type: "rpc.event", event, data }))
+  }
+
+  export function client<T extends Definition>(target: {
+    postMessage: (data: string) => void | null
+    onmessage: ((this: Worker, ev: MessageEvent<any>) => any) | null
+  }) {
     const pending = new Map<number, (result: any) => void>()
     const listeners = new Map<string, Set<(data: any) => void>>()
     let id = 0
-
-    const handleMessage = async (evt: MessageEvent<any>) => {
+    target.onmessage = async (evt) => {
       const parsed = JSON.parse(evt.data)
-      if (parsed.type === "rpc.request" && rpc) {
-        try {
-          const result = await rpc[parsed.method](parsed.input)
-          target.postMessage(JSON.stringify({ type: "rpc.result", result, id: parsed.id }))
-        } catch (e) {
-          target.postMessage(JSON.stringify({ type: "rpc.error", error: e instanceof Error ? e.message : String(e), id: parsed.id }))
-        }
-      } else if (parsed.type === "rpc.result") {
+      if (parsed.type === "rpc.result") {
         const resolve = pending.get(parsed.id)
         if (resolve) {
           resolve(parsed.result)
           pending.delete(parsed.id)
         }
-      } else if (parsed.type === "rpc.error") {
-        const resolve = pending.get(parsed.id)
-        if (resolve) {
-          // We can't reject easily since we only saved resolve, but let's just resolve undefined or throw.
-          // For simplicity, let's modify pending to store { resolve, reject }
-          resolve(undefined) // fallback if we don't have reject
-          pending.delete(parsed.id)
-        }
-      } else if (parsed.type === "rpc.event") {
+      }
+      if (parsed.type === "rpc.event") {
         const handlers = listeners.get(parsed.event)
         if (handlers) {
           for (const handler of handlers) {
@@ -47,15 +42,8 @@ export namespace Rpc {
         }
       }
     }
-
-    if (target.addEventListener) {
-      target.addEventListener("message", handleMessage)
-    } else {
-      target.onmessage = handleMessage
-    }
-
     return {
-      call<Method extends keyof TClient>(method: Method, input: Parameters<TClient[Method]>[0]): Promise<ReturnType<TClient[Method]>> {
+      call<Method extends keyof T>(method: Method, input: Parameters<T[Method]>[0]): Promise<ReturnType<T[Method]>> {
         const requestId = id++
         return new Promise((resolve) => {
           pending.set(requestId, resolve)
@@ -73,9 +61,7 @@ export namespace Rpc {
           handlers!.delete(handler)
         }
       },
-      emit(event: string, data: unknown) {
-        target.postMessage(JSON.stringify({ type: "rpc.event", event, data }))
-      }
     }
   }
 }
+
