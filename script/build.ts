@@ -352,4 +352,34 @@ if (targetArg) {
   }
 }
 
+// Create archives for the installers
+console.log("\nCreating archives for installers...");
+for (const { name } of platforms) {
+  const binaryPath = join(dist, name);
+  if (await Bun.file(binaryPath).exists()) {
+    try {
+      if (name.endsWith(".exe")) {
+        const zipName = name.replace(".exe", ".zip");
+        const tempDir = join(dist, `temp_zip_${name}`);
+        await $`mkdir -p ${tempDir}`.quiet();
+        await $`cp ${binaryPath} ${join(tempDir, "hdp.exe")}`.quiet();
+        await $`zip -j ${join(dist, zipName)} ${join(tempDir, "hdp.exe")}`.quiet();
+        await $`rm -rf ${tempDir}`.quiet();
+        console.log(`  Archived ${name} -> ${zipName} ✅`);
+      } else {
+        const tarName = `${name}.tar.gz`;
+        const tempDir = join(dist, `temp_tar_${name}`);
+        await $`mkdir -p ${tempDir}`.quiet();
+        await $`cp ${binaryPath} ${join(tempDir, "hdp")}`.quiet();
+        await $`tar -czf ${join(dist, tarName)} -C ${tempDir} hdp`.quiet();
+        await $`rm -rf ${tempDir}`.quiet();
+        console.log(`  Archived ${name} -> ${tarName} ✅`);
+      }
+    } catch (e) {
+      console.log(`  Failed to archive ${name} ❌`);
+    }
+  }
+}
+
 console.log("\nBuild successful!");
+
